@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: recruitment-crm
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: DATABASE_PATH
+        value: /app/data/crm.db
+    disk:
+      name: crm-data
+      mountPath: /app/data
+      sizeGB: 1
