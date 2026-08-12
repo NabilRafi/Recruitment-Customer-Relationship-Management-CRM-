@@ -24,9 +24,9 @@ public final class AuthUtil {
             try {
                 RequestUtil.sendError(exchange, 401, "Login required");
             } catch (IOException e) {
-                // fall through
+                // response already failed; nothing more we can do here
             }
-            throw new IllegalStateException("Unauthorized");
+            throw new AuthFailure("Unauthorized");
         });
     }
 
@@ -34,7 +34,7 @@ public final class AuthUtil {
         UserAccount user = requireUser(exchange);
         if (!user.getRole().equals(role)) {
             RequestUtil.sendError(exchange, 403, "Requires " + role + " role");
-            throw new IllegalStateException("Forbidden");
+            throw new AuthFailure("Forbidden");
         }
         return user;
     }

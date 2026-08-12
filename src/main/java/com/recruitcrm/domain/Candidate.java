@@ -36,4 +36,10 @@ public class Candidate implements UserAccount, Serializable {
     public String describe() {
         return "Candidate[" + name + ", " + email + ", resume=" + resumeLink + "]";
     }
+
+    /** The resume link is this account type's "extra" field (see UserAccount.getExtra). */
+    @Override
+    public String getExtra() {
+        return getResumeLink();
+    }
 }

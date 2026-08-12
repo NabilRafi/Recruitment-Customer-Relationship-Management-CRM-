@@ -74,8 +74,8 @@ public class ApplicationsHandler implements HttpHandler {
             }
         } catch (IllegalArgumentException e) {
             RequestUtil.sendError(exchange, 400, e.getMessage());
-        } catch (IllegalStateException e) {
-            // AuthUtil already sent 401/403
+        } catch (AuthFailure e) {
+            // AuthUtil already sent the 401/403 - nothing further to send
         } catch (Exception e) {
             RequestUtil.sendError(exchange, 500, "Server error: " + e.getMessage());
         }

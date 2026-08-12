@@ -1,9 +1,8 @@
 package com.recruitcrm.web;
 
-import com.recruitcrm.domain.Candidate;
-import com.recruitcrm.domain.Company;
-import com.recruitcrm.domain.Recruiter;
 import com.recruitcrm.domain.UserAccount;
+import com.recruitcrm.patterns.factory.UserAccountFactory;
+import com.recruitcrm.patterns.factory.UserAccountFactoryRegistry;
 import com.recruitcrm.persistence.Database;
 
 import java.sql.Connection;
@@ -78,26 +77,34 @@ public final class AuthRepository {
 
     public record AccountCredentials(UserAccount account, String passwordHash, String passwordSalt) {}
 
+    /**
+     * Rebuilds a UserAccount from a database row.
+     *
+     * IMPORTANT (viva point): this deliberately goes through the Factory
+     * Method registry rather than a switch/if-else on the role string.
+     * Reading a row back from the database is still *object creation*, so
+     * it has to obey the same rule as registration does — otherwise the
+     * banned "decide the class with a conditional" logic just reappears
+     * here, in the persistence layer, where it is easy to miss.
+     *
+     * The registry maps role -> the one factory that builds that type, so
+     * adding a fourth account type means registering one more factory and
+     * changing nothing in this class.
+     */
     private static UserAccount toAccount(String email, String role, String name, String extra) {
         String safeExtra = extra == null ? "" : extra;
-        return switch (role) {
-            case "CANDIDATE" -> new Candidate(name, email, safeExtra);
-            case "RECRUITER" -> new Recruiter(name, email, safeExtra);
-            case "COMPANY" -> new Company(name, email, safeExtra);
-            default -> throw new IllegalArgumentException("Unknown role: " + role);
-        };
+        UserAccountFactory factory = UserAccountFactoryRegistry.getInstance().getFactory(role);
+        return factory.createAccount(name, email, safeExtra);
     }
 
+    /**
+     * Reads the account's type-specific "extra" field.
+     *
+     * Also a viva point: this asks the object for its own value instead of
+     * testing "is it a Candidate? is it a Recruiter?" with instanceof.
+     * Polymorphism replaces the type-check chain — see UserAccount.getExtra.
+     */
     private static String extraFor(UserAccount account) {
-        if (account instanceof Candidate c) {
-            return c.getResumeLink();
-        }
-        if (account instanceof Recruiter r) {
-            return r.getCompanyName();
-        }
-        if (account instanceof Company co) {
-            return co.getIndustry();
-        }
-        return "";
+        return account.getExtra();
     }
 }

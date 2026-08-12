@@ -13,19 +13,38 @@ import java.sql.Statement;
  */
 public final class Database {
     private static final String DEFAULT_PATH = "data/crm.db";
-    private static Connection connection;
+    private static boolean schemaReady = false;
 
     private Database() {}
 
+    /**
+     * Returns a NEW connection each call, on purpose.
+     *
+     * An earlier version cached one shared static Connection and handed
+     * the same object to everybody. Because every caller wraps it in
+     * try-with-resources, the first block to finish closed the shared
+     * connection for everyone else. That broke any nested query — e.g.
+     * listing applications, which loops over a ResultSet and looks up
+     * each candidate account inside the loop — with "stmt pointer is
+     * closed" halfway through.
+     *
+     * A fresh connection per call keeps try-with-resources correct: each
+     * caller owns and closes exactly its own connection. SQLite is
+     * perfectly happy with several connections to the same file.
+     */
     public static synchronized Connection getConnection() throws SQLException {
-        if (connection == null || connection.isClosed()) {
-            String path = System.getenv().getOrDefault("DATABASE_PATH", DEFAULT_PATH);
-            new File(path).getParentFile().mkdirs();
-            connection = DriverManager.getConnection("jdbc:sqlite:" + path);
-            connection.setAutoCommit(true);
-            initSchema(connection);
+        String path = System.getenv().getOrDefault("DATABASE_PATH", DEFAULT_PATH);
+        File file = new File(path);
+        if (file.getParentFile() != null) {
+            file.getParentFile().mkdirs();
         }
-        return connection;
+        Connection conn = DriverManager.getConnection("jdbc:sqlite:" + path);
+        conn.setAutoCommit(true);
+        if (!schemaReady) {
+            initSchema(conn);
+            schemaReady = true;
+        }
+        return conn;
     }
 
     private static void initSchema(Connection conn) throws SQLException {

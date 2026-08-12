@@ -36,4 +36,10 @@ public class Recruiter implements UserAccount, Serializable {
     public String describe() {
         return "Recruiter[" + name + ", " + email + ", company=" + companyName + "]";
     }
+
+    /** The company name is this account type's "extra" field (see UserAccount.getExtra). */
+    @Override
+    public String getExtra() {
+        return getCompanyName();
+    }
 }

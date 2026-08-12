@@ -1,9 +1,0 @@
-target/
-out/
-data/
-*.class
-*.db
-.vscode/
-.idea/
-*.iml
-.DS_Store

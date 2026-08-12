@@ -36,4 +36,10 @@ public class Company implements UserAccount, Serializable {
     public String describe() {
         return "Company[" + name + ", " + email + ", industry=" + industry + "]";
     }
+
+    /** The industry is this account type's "extra" field (see UserAccount.getExtra). */
+    @Override
+    public String getExtra() {
+        return getIndustry();
+    }
 }
