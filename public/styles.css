@@ -386,7 +386,32 @@ main {
   line-height: 1;
 }
 
-#postRoleForm, #applyForm { display: flex; flex-direction: column; gap: 14px; }
+#postRoleForm, #applyForm, #loginForm, #registerForm { display: flex; flex-direction: column; gap: 14px; }
+
+#postRoleForm label, #applyForm label, #loginForm label, #registerForm label {
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#postRoleForm input,
+#postRoleForm select,
+#postRoleForm textarea,
+#applyForm input,
+#loginForm input,
+#registerForm input,
+#registerForm select {
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink);
+}
 
 #postRoleForm label, #applyForm label {
   font-size: 13px;
