@@ -6,7 +6,7 @@ import java.security.SecureRandom;
 import java.security.spec.KeySpec;
 import java.util.Base64;
 
-/** PBKDF2 password hashing — no external crypto libraries needed. */
+
 public final class PasswordUtil {
     private static final int SALT_BYTES = 16;
     private static final int ITERATIONS = 120_000;

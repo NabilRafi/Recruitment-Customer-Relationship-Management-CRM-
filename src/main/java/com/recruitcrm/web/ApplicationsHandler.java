@@ -88,23 +88,12 @@ public class ApplicationsHandler implements HttpHandler {
             throw new IllegalArgumentException("No job with id " + jobId);
         }
 
-        var currentUser = AuthUtil.currentUser(exchange).orElseThrow();
-        Candidate candidate;
-        if (currentUser instanceof Candidate loggedInCandidate) {
-            candidate = loggedInCandidate;
-            if (!currentUser.getEmail().equalsIgnoreCase(email)) {
-                throw new IllegalArgumentException("Use your logged-in email when applying");
-            }
-        } else {
-            UserAccount existing = store.getAccount(email);
-            if (existing instanceof Candidate existingCandidate) {
-                candidate = existingCandidate;
-            } else {
-                UserAccountFactory factory = UserAccountFactoryRegistry.getInstance().getFactory("CANDIDATE");
-                candidate = (Candidate) factory.createAccount(name, email, resumeLink);
-                store.saveAccount(email, candidate);
-            }
+        UserAccount currentUser = AuthUtil.requireRole(exchange, "CANDIDATE");
+
+        if (!currentUser.getEmail().equalsIgnoreCase(email)) {
+            throw new IllegalArgumentException("Use your logged-in email when applying");
         }
+        Candidate candidate = (Candidate) currentUser;
 
         Application application = facade.submitApplication(candidate, job);
         RequestUtil.sendJson(exchange, 201, toJson(application));

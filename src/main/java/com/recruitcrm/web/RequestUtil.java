@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Small helpers shared by every HTTP handler: parsing requests, sending JSON responses. */
+
 public class RequestUtil {
 
     /** Reads a form-encoded body ("name=Ayesha&email=a%40b.com") into a Map. */

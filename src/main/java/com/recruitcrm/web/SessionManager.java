@@ -10,7 +10,7 @@ import java.sql.SQLException;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Manages login sessions stored in SQLite. */
+
 public final class SessionManager {
     private static final long SESSION_TTL_MS = 24 * 60 * 60 * 1000L;
     public static final String COOKIE_NAME = "session";

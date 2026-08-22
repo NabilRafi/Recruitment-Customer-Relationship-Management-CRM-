@@ -57,6 +57,10 @@ function isRecruiter() {
   return currentUser?.authenticated && currentUser.role === "RECRUITER";
 }
 
+function isCandidate() {
+  return currentUser?.authenticated && currentUser.role === "CANDIDATE";
+}
+
 function isLoggedIn() {
   return currentUser?.authenticated === true;
 }
@@ -197,7 +201,7 @@ function renderJobs() {
       <p class="job-desc">${escapeHtml(job.description)}</p>
       <div class="job-score">Visibility score: ${job.visibilityScore} · from the Decorator chain</div>
       <div class="job-actions">
-        <button class="btn btn-primary btn-small" data-apply="${job.id}" data-title="${escapeHtml(job.title)}">Apply</button>
+                        ${isCandidate() ? `<button class="btn btn-primary btn-small" data-apply="${job.id}" data-title="${escapeHtml(job.title)}">Apply</button>` : ""}
         ${isRecruiter() ? `
           <button class="btn btn-ghost btn-small ${job.featured ? "is-on" : ""}" data-toggle="feature" data-job="${job.id}">${job.featured ? "Unfeature" : "Feature"}</button>
           <button class="btn btn-ghost btn-small ${job.urgent ? "is-on" : ""}" data-toggle="urgent" data-job="${job.id}">${job.urgent ? "Unmark urgent" : "Mark urgent"}</button>

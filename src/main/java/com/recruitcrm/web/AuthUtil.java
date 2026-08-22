@@ -6,7 +6,7 @@ import com.sun.net.httpserver.HttpExchange;
 import java.io.IOException;
 import java.util.Optional;
 
-/** Resolves the logged-in user and enforces role checks on protected routes. */
+
 public final class AuthUtil {
     private AuthUtil() {}
 

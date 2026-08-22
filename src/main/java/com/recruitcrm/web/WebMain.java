@@ -4,16 +4,7 @@ import com.sun.net.httpserver.HttpServer;
 
 import java.net.InetSocketAddress;
 
-/**
- * Entry point for running the project as a web app instead of the
- * console demo in Main.java. Serves the frontend from ./public and the
- * REST API under /api/*, all from one process — no separate frontend
- * server, no CORS setup needed.
- *
- * Reads PORT from the environment (falls back to 8080) because that's
- * the convention most hosting platforms use to tell an app which port
- * to listen on.
- */
+
 public class WebMain {
     public static void main(String[] args) throws Exception {
         int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "8080"));

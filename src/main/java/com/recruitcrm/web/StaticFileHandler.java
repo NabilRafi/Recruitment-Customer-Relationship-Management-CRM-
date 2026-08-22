@@ -9,7 +9,7 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-/** Serves the static frontend (HTML/CSS/JS) from the given root folder. */
+
 public class StaticFileHandler implements HttpHandler {
     private final Path root;
 
