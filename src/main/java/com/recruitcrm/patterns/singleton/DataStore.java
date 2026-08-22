@@ -17,14 +17,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * SINGLETON PATTERN.
- *
- * One shared data access point for the whole application. Persistence
- * is backed by SQLite (see persistence.Database) instead of Java
- * serialization — data survives restarts and is queryable like a
- * real database.
- */
+
 public final class DataStore {
     private static DataStore instance;
 

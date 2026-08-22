@@ -25,20 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Submits and advances Applications through RecruitmentFacade
- * (patterns.facade), which is what actually coordinates the Singleton
- * data store, the chosen Strategy, and the Observer notifications.
- *
- * Which evaluation Strategy runs is picked from STRATEGIES below — a
- * map lookup, not an if-else chain, for the same reason the Factory
- * registry avoids one: consistency, not just where the rule was stated.
- *
- * Routes:
- *   GET  /api/applications                  -> list all applications
- *   POST /api/applications                  -> submit one
- *   POST /api/applications/{id}/status       -> advance status (+ optional strategy)
- */
+
 public class ApplicationsHandler implements HttpHandler {
     private static final Map<String, EvaluationStrategy> STRATEGIES = Map.of(
             "TECHNICAL", new TechnicalEvaluationStrategy(),

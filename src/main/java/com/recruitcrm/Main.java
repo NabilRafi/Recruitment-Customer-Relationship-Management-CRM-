@@ -18,11 +18,7 @@ import com.recruitcrm.patterns.observer.EmailNotificationObserver;
 import com.recruitcrm.patterns.singleton.DataStore;
 import com.recruitcrm.patterns.strategy.TechnicalEvaluationStrategy;
 
-/**
- * Console demo that exercises all six design patterns together, the same
- * way each lecture example ends with a main() that prints output. Use
- * this as your walkthrough script for the viva.
- */
+
 public class Main {
     public static void main(String[] args) {
 

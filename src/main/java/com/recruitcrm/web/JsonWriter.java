@@ -4,15 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Minimal hand-rolled JSON writer. No external library, so nothing here
- * counts as a "built-in feature doing the work for you" — it's just
- * string building, same spirit as everything else in this project.
- *
- * Only writes JSON (server -> browser). Incoming requests use simple
- * form-encoded bodies instead (see RequestUtil), so there's no need for
- * a JSON parser on this side at all.
- */
+
 public class JsonWriter {
 
     public static Obj obj() {
@@ -38,7 +30,7 @@ public class JsonWriter {
         return sb.append("\"").toString();
     }
 
-    /** Small fluent builder so handlers read like obj().put("id", x).put("title", y).toString() */
+    
     public static class Obj {
         private final Map<String, String> fields = new LinkedHashMap<>();
 

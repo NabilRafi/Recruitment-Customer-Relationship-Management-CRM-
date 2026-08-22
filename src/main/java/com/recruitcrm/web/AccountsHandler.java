@@ -11,14 +11,7 @@ import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
 import java.util.Map;
 
-/**
- * Creates accounts through the Factory Method registry (patterns.factory).
- * This handler never branches on account type itself — it just asks the
- * registry for the right factory and calls it.
- *
- * Routes:
- *   POST /api/accounts   (fields: type, name, email, extra)
- */
+
 public class AccountsHandler implements HttpHandler {
     private final DataStore store = DataStore.getInstance();
 

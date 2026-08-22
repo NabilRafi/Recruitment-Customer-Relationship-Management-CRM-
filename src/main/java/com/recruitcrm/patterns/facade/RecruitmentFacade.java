@@ -12,18 +12,7 @@ import com.recruitcrm.patterns.strategy.EvaluationStrategy;
 
 import java.util.UUID;
 
-/**
- * FACADE PATTERN.
- *
- * One simple entry point that hides the coordination between several
- * subsystems: DataStore (Singleton), the Strategy family, and the
- * Observer publisher. Calling code just says "submit this application"
- * or "move this application to this status" without knowing about any
- * of the classes underneath.
- *
- * Named RecruitmentFacade (not placed in a "Facades" folder) to avoid
- * any confusion with a framework's own built-in Facade feature.
- */
+
 public class RecruitmentFacade {
     private final DataStore dataStore = DataStore.getInstance();
     private final ApplicationStatusPublisher publisher = new ApplicationStatusPublisher();

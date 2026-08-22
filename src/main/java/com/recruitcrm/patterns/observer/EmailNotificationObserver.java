@@ -2,7 +2,7 @@ package com.recruitcrm.patterns.observer;
 
 import com.recruitcrm.domain.Application;
 
-/** Concrete Observer: pretends to email the candidate about the status change. */
+
 public class EmailNotificationObserver implements ApplicationObserver {
     @Override
     public void onStatusChanged(Application application) {

@@ -17,18 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Exposes Job data over HTTP. Every job's display fields are computed by
- * wrapping it in the Decorator chain (see patterns.decorator) based on
- * its persisted featured/urgent flags — the API doesn't duplicate that
- * logic, it just asks the decorators for the result.
- *
- * Routes:
- *   GET  /api/jobs                -> list all jobs
- *   POST /api/jobs                -> create a job
- *   POST /api/jobs/{id}/feature   -> toggle Featured
- *   POST /api/jobs/{id}/urgent    -> toggle Urgent
- */
+
 public class JobsHandler implements HttpHandler {
     private final DataStore store = DataStore.getInstance();
 
