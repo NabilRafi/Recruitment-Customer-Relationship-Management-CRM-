@@ -36,6 +36,17 @@ public class Application implements Serializable {
         this.status = status;
     }
 
+
+    private String interviewDetails = "";
+
+    public String getInterviewDetails() {
+        return interviewDetails;
+    }
+
+    public void setInterviewDetails(String interviewDetails) {
+        this.interviewDetails = interviewDetails == null ? "" : interviewDetails;
+    }
+    
     public String getLastEvaluationSummary() {
         return lastEvaluationSummary;
     }

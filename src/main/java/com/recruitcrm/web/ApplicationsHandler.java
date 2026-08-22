@@ -9,7 +9,8 @@ import com.recruitcrm.patterns.facade.RecruitmentFacade;
 import com.recruitcrm.patterns.factory.UserAccountFactory;
 import com.recruitcrm.patterns.factory.UserAccountFactoryRegistry;
 import com.recruitcrm.patterns.observer.AuditLogObserver;
-import com.recruitcrm.patterns.observer.EmailNotificationObserver;
+import com.recruitcrm.notification.EmailConfig;
+import com.recruitcrm.patterns.observer.RealEmailObserver;
 import com.recruitcrm.patterns.singleton.DataStore;
 import com.recruitcrm.patterns.strategy.BehavioralEvaluationStrategy;
 import com.recruitcrm.patterns.strategy.EvaluationStrategy;
@@ -37,7 +38,7 @@ public class ApplicationsHandler implements HttpHandler {
     private final RecruitmentFacade facade = new RecruitmentFacade();
 
     public ApplicationsHandler() {
-        facade.addObserver(new EmailNotificationObserver());
+        facade.addObserver(new RealEmailObserver(EmailConfig.buildSender()));
         facade.addObserver(new AuditLogObserver());
     }
 
@@ -69,9 +70,15 @@ public class ApplicationsHandler implements HttpHandler {
     }
 
     private void listApplications(HttpExchange exchange) throws IOException {
+        UserAccount user = AuthUtil.requireUser(exchange);
+        boolean isRecruiter = user.getRole().equals("RECRUITER");
+
         List<String> jsons = new ArrayList<>();
         for (Application app : store.getAllApplications()) {
-            jsons.add(toJson(app));
+            boolean ownedByThisUser = app.getCandidate().getEmail().equalsIgnoreCase(user.getEmail());
+            if (isRecruiter || ownedByThisUser) {
+                jsons.add(toJson(app));
+            }
         }
         RequestUtil.sendJson(exchange, 200, JsonWriter.array(jsons));
     }
@@ -115,7 +122,10 @@ public class ApplicationsHandler implements HttpHandler {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Unknown status: " + statusRaw);
         }
-
+        String interviewDetails = form.getOrDefault("interviewDetails", "");
+        if (!interviewDetails.isBlank()) {
+            application.setInterviewDetails(interviewDetails);
+        }
         EvaluationStrategy strategy = STRATEGIES.get(strategyRaw); // null is fine - means "no evaluation this time"
         facade.updateStatus(application, newStatus, strategy);
         RequestUtil.sendJson(exchange, 200, toJson(application));

@@ -29,6 +29,14 @@ public final class Database {
         return conn;
     }
 
+    private static void addColumnIfMissing(Connection conn, String table, String column, String definition) {
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute("ALTER TABLE " + table + " ADD COLUMN " + column + " " + definition);
+        } catch (SQLException e) {
+            // Column already exists - expected on every run after the first.
+        }
+    }
+
     private static void initSchema(Connection conn) throws SQLException {
         try (Statement stmt = conn.createStatement()) {
             stmt.execute("""
@@ -73,5 +81,10 @@ public final class Database {
                 )
                 """);
         }
+
+        // Columns added after the first release. Safe to run every startup.
+        addColumnIfMissing(conn, "jobs", "location", "TEXT DEFAULT ''");
+        addColumnIfMissing(conn, "jobs", "salary_range", "TEXT DEFAULT ''");
+        addColumnIfMissing(conn, "jobs", "deadline", "TEXT DEFAULT ''");
     }
 }

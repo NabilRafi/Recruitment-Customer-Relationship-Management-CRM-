@@ -1,5 +1,6 @@
 package com.recruitcrm.web;
 
+import com.recruitcrm.patterns.builder.JobBuilder;
 import com.recruitcrm.domain.Job;
 import com.recruitcrm.domain.JobType;
 import com.recruitcrm.patterns.decorator.BasicJobPosting;
@@ -72,8 +73,18 @@ public class JobsHandler implements HttpHandler {
             type = JobType.FULL_TIME;
         }
 
-        String id = "job-" + UUID.randomUUID().toString().substring(0, 8);
-        Job job = new Job(id, title, company, type, description);
+                // BUILDER PATTERN in use (see patterns.builder). Each part is named
+        // as it is added, and only the parts actually supplied are set -
+        // no long positional argument list to get wrong.
+        Job job = new JobBuilder()
+                .title(title)
+                .company(company)
+                .type(type)
+                .description(description)
+                .location(form.getOrDefault("location", ""))
+                .salaryRange(form.getOrDefault("salaryRange", ""))
+                .deadline(form.getOrDefault("deadline", ""))
+                .build();
         var recruiter = AuthUtil.currentUser(exchange).orElse(null);
         store.saveJob(job, recruiter != null ? recruiter.getEmail() : null);
         RequestUtil.sendJson(exchange, 201, toJson(job));
@@ -109,6 +120,9 @@ public class JobsHandler implements HttpHandler {
                 .put("company", job.getCompanyName())
                 .put("type", job.getType().name())
                 .put("description", job.getDescription())
+                .put("location", job.getLocation())
+                .put("salaryRange", job.getSalaryRange())
+                .put("deadline", job.getDeadline())
                 .put("featured", job.isFeatured())
                 .put("urgent", job.isUrgent())
                 .put("displayTitle", view.getDisplayTitle())

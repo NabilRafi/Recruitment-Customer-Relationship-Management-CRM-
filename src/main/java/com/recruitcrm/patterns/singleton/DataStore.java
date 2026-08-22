@@ -1,5 +1,7 @@
 package com.recruitcrm.patterns.singleton;
 
+import com.recruitcrm.patterns.builder.JobBuilder;
+
 import com.recruitcrm.domain.Application;
 import com.recruitcrm.domain.ApplicationStatus;
 import com.recruitcrm.domain.Candidate;
@@ -70,8 +72,9 @@ public final class DataStore {
     public synchronized void saveJob(Job job, String postedBy) {
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement("""
-                 INSERT INTO jobs (id, title, company_name, type, description, featured, urgent, posted_by)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                 INSERT INTO jobs (id, title, company_name, type, description, featured, urgent, posted_by,
+                                   location, salary_range, deadline)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                  ON CONFLICT(id) DO UPDATE SET
                    title = excluded.title,
                    company_name = excluded.company_name,
@@ -79,7 +82,10 @@ public final class DataStore {
                    description = excluded.description,
                    featured = excluded.featured,
                    urgent = excluded.urgent,
-                   posted_by = COALESCE(excluded.posted_by, jobs.posted_by)
+                   posted_by = COALESCE(excluded.posted_by, jobs.posted_by),
+                   location = excluded.location,
+                   salary_range = excluded.salary_range,
+                   deadline = excluded.deadline
                  """)) {
             ps.setString(1, job.getId());
             ps.setString(2, job.getTitle());
@@ -89,6 +95,9 @@ public final class DataStore {
             ps.setInt(6, job.isFeatured() ? 1 : 0);
             ps.setInt(7, job.isUrgent() ? 1 : 0);
             ps.setString(8, postedBy);
+            ps.setString(9, job.getLocation());
+            ps.setString(10, job.getSalaryRange());
+            ps.setString(11, job.getDeadline());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Could not save job", e);
@@ -98,7 +107,7 @@ public final class DataStore {
     public Job getJob(String id) {
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(
-                     "SELECT id, title, company_name, type, description, featured, urgent FROM jobs WHERE id = ?")) {
+                     "SELECT id, title, company_name, type, description, featured, urgent, location, salary_range, deadline FROM jobs WHERE id = ?")) {
             ps.setString(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
@@ -115,7 +124,7 @@ public final class DataStore {
         List<Job> jobs = new ArrayList<>();
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(
-                     "SELECT id, title, company_name, type, description, featured, urgent FROM jobs ORDER BY title");
+                     "SELECT id, title, company_name, type, description, featured, urgent, location, salary_range, deadline FROM jobs ORDER BY title");
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 jobs.add(rowToJob(rs));
@@ -193,17 +202,26 @@ public final class DataStore {
         return app;
     }
 
+        /**
+     * Rebuilds a Job from a database row using the BUILDER pattern.
+     *
+     * Using the builder here means the row -> object mapping names every
+     * field it sets, instead of relying on the order of an 8-argument
+     * constructor call.
+     */
     private Job rowToJob(ResultSet rs) throws SQLException {
-        Job job = new Job(
-                rs.getString("id"),
-                rs.getString("title"),
-                rs.getString("company_name"),
-                JobType.valueOf(rs.getString("type")),
-                rs.getString("description") == null ? "" : rs.getString("description")
-        );
-        job.setFeatured(rs.getInt("featured") == 1);
-        job.setUrgent(rs.getInt("urgent") == 1);
-        return job;
+        return new JobBuilder()
+                .id(rs.getString("id"))
+                .title(rs.getString("title"))
+                .company(rs.getString("company_name"))
+                .type(JobType.valueOf(rs.getString("type")))
+                .description(rs.getString("description") == null ? "" : rs.getString("description"))
+                .location(rs.getString("location") == null ? "" : rs.getString("location"))
+                .salaryRange(rs.getString("salary_range") == null ? "" : rs.getString("salary_range"))
+                .deadline(rs.getString("deadline") == null ? "" : rs.getString("deadline"))
+                .featured(rs.getInt("featured") == 1)
+                .urgent(rs.getInt("urgent") == 1)
+                .build();
     }
 
     private void seedDemoUsersIfEmpty() throws SQLException {

@@ -14,6 +14,7 @@ public class WebMain {
         server.createContext("/api/jobs", new JobsHandler());
         server.createContext("/api/applications", new ApplicationsHandler());
         server.createContext("/api/accounts", new AccountsHandler());
+        server.createContext("/api/candidates", new CandidatesHandler());
         server.createContext("/", new StaticFileHandler("public"));
         server.setExecutor(null);
         server.start();
