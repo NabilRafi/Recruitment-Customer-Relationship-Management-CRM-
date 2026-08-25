@@ -122,6 +122,12 @@ public class ApplicationsHandler implements HttpHandler {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Unknown status: " + statusRaw);
         }
+
+            
+        String entitlements = form.getOrDefault("entitlements", "");
+        if (!entitlements.isBlank()) {
+            application.setOfferEntitlements(entitlements);
+        }
         String interviewDetails = form.getOrDefault("interviewDetails", "");
         if (!interviewDetails.isBlank()) {
             application.setInterviewDetails(interviewDetails);

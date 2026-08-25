@@ -5,16 +5,7 @@ import com.recruitcrm.domain.ApplicationStatus;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Maps an application status to the email template for that status.
- *
- * A map lookup, not a switch — the same approach used by
- * UserAccountFactoryRegistry. Adding a new status means registering one
- * more template; no existing method is edited.
- *
- * Returns null when a status has no template, which the caller treats as
- * "this status does not warrant an email".
- */
+
 public class EmailTemplateRegistry {
 
     private static final EmailTemplateRegistry INSTANCE = new EmailTemplateRegistry();

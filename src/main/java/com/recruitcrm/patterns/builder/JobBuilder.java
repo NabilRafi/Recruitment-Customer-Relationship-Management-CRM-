@@ -5,26 +5,7 @@ import com.recruitcrm.domain.JobType;
 
 import java.util.UUID;
 
-/**
- * BUILDER PATTERN — the "Builder" role.
- *
- * A Job has three required fields (title, company, type) and several
- * optional ones (description, location, salary, deadline, plus the
- * Featured/Urgent flags). Building it with one constructor would mean:
- *
- *     new Job(id, title, company, type, desc, location, salary, deadline)
- *
- * ...eight arguments in a fixed order, most of them String, where
- * swapping two by accident compiles fine and fails silently at runtime.
- *
- * The Builder lets the caller name each part as it is added, supply only
- * the parts it actually has, and produce the finished object in one final
- * build() call. The Job itself stays immutable — its fields are final and
- * there are no setters for them.
- *
- * Each setter returns "this", which is what allows the calls to be
- * chained together (a fluent interface).
- */
+
 public class JobBuilder {
 
     private String id;
@@ -35,6 +16,7 @@ public class JobBuilder {
     private String location = "";
     private String salaryRange = "";
     private String deadline = "";
+    private double baseSalary = 0;
     private boolean featured = false;
     private boolean urgent = false;
 
@@ -78,6 +60,10 @@ public class JobBuilder {
         return this;
     }
 
+    public JobBuilder baseSalary(double baseSalary) {
+        this.baseSalary = baseSalary;
+        return this;
+    }
     public JobBuilder urgent(boolean urgent) {
         this.urgent = urgent;
         return this;
@@ -89,13 +75,7 @@ public class JobBuilder {
         return this;
     }
 
-    /**
-     * Produces the finished Job.
-     *
-     * Validation lives here rather than in the Job constructor, so the
-     * builder can check the whole object at once — it is the only point
-     * at which every part is known.
-     */
+    
     public Job build() {
         if (title == null || title.isBlank()) {
             throw new IllegalArgumentException("A job needs a title");
@@ -107,7 +87,7 @@ public class JobBuilder {
             id = "job-" + UUID.randomUUID().toString().substring(0, 8);
         }
 
-        Job job = new Job(id, title, companyName, type, description, location, salaryRange, deadline);
+        Job job = new Job(id, title, companyName, type, description, location, salaryRange, deadline, baseSalary);
         job.setFeatured(featured);
         job.setUrgent(urgent);
         return job;

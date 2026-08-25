@@ -84,6 +84,7 @@ public class JobsHandler implements HttpHandler {
                 .location(form.getOrDefault("location", ""))
                 .salaryRange(form.getOrDefault("salaryRange", ""))
                 .deadline(form.getOrDefault("deadline", ""))
+                .baseSalary(parseDouble(form.get("baseSalary")))
                 .build();
         var recruiter = AuthUtil.currentUser(exchange).orElse(null);
         store.saveJob(job, recruiter != null ? recruiter.getEmail() : null);
@@ -123,11 +124,22 @@ public class JobsHandler implements HttpHandler {
                 .put("location", job.getLocation())
                 .put("salaryRange", job.getSalaryRange())
                 .put("deadline", job.getDeadline())
+                .put("baseSalary", (int) job.getBaseSalary())
                 .put("featured", job.isFeatured())
                 .put("urgent", job.isUrgent())
                 .put("displayTitle", view.getDisplayTitle())
                 .put("visibilityScore", view.getVisibilityScore())
                 .toString();
+    }
+
+        
+    private double parseDouble(String raw) {
+        if (raw == null || raw.isBlank()) return 0;
+        try {
+            return Double.parseDouble(raw.replace(",", "").trim());
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     private String require(Map<String, String> form, String key) {

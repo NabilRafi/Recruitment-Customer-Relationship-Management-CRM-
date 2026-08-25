@@ -82,9 +82,12 @@ public final class Database {
                 """);
         }
 
-        // Columns added after the first release. Safe to run every startup.
+                
         addColumnIfMissing(conn, "jobs", "location", "TEXT DEFAULT ''");
         addColumnIfMissing(conn, "jobs", "salary_range", "TEXT DEFAULT ''");
         addColumnIfMissing(conn, "jobs", "deadline", "TEXT DEFAULT ''");
+        addColumnIfMissing(conn, "jobs", "base_salary", "REAL DEFAULT 0");
+        addColumnIfMissing(conn, "applications", "evaluation_score", "INTEGER DEFAULT 0");
+        addColumnIfMissing(conn, "applications", "offer_entitlements", "TEXT DEFAULT ''");
     }
 }

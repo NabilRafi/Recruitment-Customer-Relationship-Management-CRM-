@@ -30,6 +30,6 @@ public class InterviewEmail implements EmailTemplate {
              + "Application reference: " + a.getId() + "\n\n"
              + "Kind regards,\n"
              + a.getJob().getCompanyName() + " Recruitment Team\n"
-             + "Sent via Fieldnote Recruitment CRM";
+             + "Sent via Cadre Recruitment CRM";
     }
 }

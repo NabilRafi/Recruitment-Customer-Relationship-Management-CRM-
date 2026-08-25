@@ -22,10 +22,10 @@ public class ShortlistedEmail implements EmailTemplate {
              + "What happens next:\n"
              + "  - Our team will be in touch to arrange an interview.\n"
              + "  - Please keep an eye on this inbox, including your spam folder.\n"
-             + "  - You can review your application status at any time in the Fieldnote portal.\n\n"
+             + "  - You can review your application status at any time in the Cadre portal.\n\n"
              + "Application reference: " + a.getId() + "\n\n"
              + "Kind regards,\n"
              + a.getJob().getCompanyName() + " Recruitment Team\n"
-             + "Sent via Fieldnote Recruitment CRM";
+             + "Sent via Cadre Recruitment CRM";
     }
 }

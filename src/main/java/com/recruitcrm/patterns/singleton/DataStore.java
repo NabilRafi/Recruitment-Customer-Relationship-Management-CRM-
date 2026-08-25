@@ -73,8 +73,8 @@ public final class DataStore {
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement("""
                  INSERT INTO jobs (id, title, company_name, type, description, featured, urgent, posted_by,
-                                   location, salary_range, deadline)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                   location, salary_range, deadline, base_salary)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                  ON CONFLICT(id) DO UPDATE SET
                    title = excluded.title,
                    company_name = excluded.company_name,
@@ -85,7 +85,8 @@ public final class DataStore {
                    posted_by = COALESCE(excluded.posted_by, jobs.posted_by),
                    location = excluded.location,
                    salary_range = excluded.salary_range,
-                   deadline = excluded.deadline
+                   deadline = excluded.deadline,
+                   base_salary = excluded.base_salary
                  """)) {
             ps.setString(1, job.getId());
             ps.setString(2, job.getTitle());
@@ -98,6 +99,7 @@ public final class DataStore {
             ps.setString(9, job.getLocation());
             ps.setString(10, job.getSalaryRange());
             ps.setString(11, job.getDeadline());
+            ps.setDouble(12, job.getBaseSalary());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Could not save job", e);
@@ -107,7 +109,7 @@ public final class DataStore {
     public Job getJob(String id) {
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(
-                     "SELECT id, title, company_name, type, description, featured, urgent, location, salary_range, deadline FROM jobs WHERE id = ?")) {
+                     "SELECT id, title, company_name, type, description, featured, urgent, location, salary_range, deadline, base_salary FROM jobs WHERE id = ?")) {
             ps.setString(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
@@ -124,7 +126,7 @@ public final class DataStore {
         List<Job> jobs = new ArrayList<>();
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(
-                     "SELECT id, title, company_name, type, description, featured, urgent, location, salary_range, deadline FROM jobs ORDER BY title");
+                     "SELECT id, title, company_name, type, description, featured, urgent, location, salary_range, deadline, base_salary FROM jobs ORDER BY title");
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 jobs.add(rowToJob(rs));
@@ -138,17 +140,22 @@ public final class DataStore {
     public synchronized void saveApplication(Application application) {
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement("""
-                 INSERT INTO applications (id, candidate_email, job_id, status, evaluation_summary)
-                 VALUES (?, ?, ?, ?, ?)
+                 INSERT INTO applications (id, candidate_email, job_id, status, evaluation_summary,
+                                           evaluation_score, offer_entitlements)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)
                  ON CONFLICT(id) DO UPDATE SET
                    status = excluded.status,
-                   evaluation_summary = excluded.evaluation_summary
+                   evaluation_summary = excluded.evaluation_summary,
+                   evaluation_score = excluded.evaluation_score,
+                   offer_entitlements = excluded.offer_entitlements
                  """)) {
             ps.setString(1, application.getId());
             ps.setString(2, application.getCandidate().getEmail());
             ps.setString(3, application.getJob().getId());
             ps.setString(4, application.getStatus().name());
             ps.setString(5, application.getLastEvaluationSummary());
+            ps.setInt(6, application.getEvaluationScore());
+            ps.setString(7, application.getOfferEntitlements());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Could not save application", e);
@@ -158,7 +165,7 @@ public final class DataStore {
     public Application getApplication(String id) {
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(
-                     "SELECT id, candidate_email, job_id, status, evaluation_summary FROM applications WHERE id = ?")) {
+                     "SELECT id, candidate_email, job_id, status, evaluation_summary, evaluation_score, offer_entitlements FROM applications WHERE id = ?")) {
             ps.setString(1, id);
             try (ResultSet rs = ps.executeQuery()) {
                 if (!rs.next()) {
@@ -175,7 +182,7 @@ public final class DataStore {
         List<Application> apps = new ArrayList<>();
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(
-                     "SELECT id, candidate_email, job_id, status, evaluation_summary FROM applications ORDER BY id");
+                     "SELECT id, candidate_email, job_id, status, evaluation_summary, evaluation_score, offer_entitlements FROM applications ORDER BY id");
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 apps.add(rowToApplication(rs));
@@ -199,16 +206,11 @@ public final class DataStore {
         Application app = new Application(id, candidate, job);
         app.setStatus(ApplicationStatus.valueOf(rs.getString("status")));
         app.setLastEvaluationSummary(rs.getString("evaluation_summary"));
+        app.setEvaluationScore(rs.getInt("evaluation_score"));
+        app.setOfferEntitlements(rs.getString("offer_entitlements"));
         return app;
     }
 
-        /**
-     * Rebuilds a Job from a database row using the BUILDER pattern.
-     *
-     * Using the builder here means the row -> object mapping names every
-     * field it sets, instead of relying on the order of an 8-argument
-     * constructor call.
-     */
     private Job rowToJob(ResultSet rs) throws SQLException {
         return new JobBuilder()
                 .id(rs.getString("id"))
@@ -220,6 +222,7 @@ public final class DataStore {
                 .salaryRange(rs.getString("salary_range") == null ? "" : rs.getString("salary_range"))
                 .deadline(rs.getString("deadline") == null ? "" : rs.getString("deadline"))
                 .featured(rs.getInt("featured") == 1)
+                .baseSalary(rs.getDouble("base_salary"))
                 .urgent(rs.getInt("urgent") == 1)
                 .build();
     }

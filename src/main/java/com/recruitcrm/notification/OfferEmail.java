@@ -1,6 +1,8 @@
 package com.recruitcrm.notification;
 
 import com.recruitcrm.domain.Application;
+import com.recruitcrm.patterns.decorator.compensation.Compensation;
+import com.recruitcrm.patterns.decorator.compensation.CompensationCalculator;
 
 public class OfferEmail implements EmailTemplate {
 
@@ -11,9 +13,20 @@ public class OfferEmail implements EmailTemplate {
 
     @Override
     public String body(Application a) {
-        String salary = a.getJob().getSalaryRange() == null || a.getJob().getSalaryRange().isBlank()
-                ? "To be confirmed in your formal contract"
-                : a.getJob().getSalaryRange();
+        // DECORATOR PATTERN: the compensation package is assembled by
+        // wrapping a BaseSalary in one decorator per entitlement the
+        // recruiter selected. Each wrapper adds a real monetary amount and
+        // its own line to the itemised breakdown below.
+        Compensation offerPackage = CompensationCalculator.build(
+                a.getJob().getTitle(),
+                a.getJob().getBaseSalary(),
+                a.getOfferEntitlements(),
+                a.getEvaluationScore());
+
+        String compensationBlock = a.getJob().getBaseSalary() > 0
+                ? CompensationCalculator.formatOffer(offerPackage)
+                : "  To be confirmed in your formal contract";
+
         String location = a.getJob().getLocation() == null || a.getJob().getLocation().isBlank()
                 ? "To be confirmed"
                 : a.getJob().getLocation();
@@ -27,7 +40,10 @@ public class OfferEmail implements EmailTemplate {
              + "  Employer:      " + a.getJob().getCompanyName() + "\n"
              + "  Employment:    " + a.getJob().getType().name().replace("_", " ") + "\n"
              + "  Location:      " + location + "\n"
-             + "  Compensation:  " + salary + "\n\n"
+             + "\n"
+             + "COMPENSATION PACKAGE\n"
+             + "--------------------\n"
+             + compensationBlock + "\n\n"
              + "Next steps:\n"
              + "  1. Reply to this email to confirm whether you accept.\n"
              + "  2. On acceptance we will send your formal contract for signature.\n"
@@ -37,6 +53,6 @@ public class OfferEmail implements EmailTemplate {
              + "Application reference: " + a.getId() + "\n\n"
              + "Kind regards,\n"
              + a.getJob().getCompanyName() + " Recruitment Team\n"
-             + "Sent via Fieldnote Recruitment CRM";
+             + "Sent via Cadre Recruitment CRM";
     }
 }

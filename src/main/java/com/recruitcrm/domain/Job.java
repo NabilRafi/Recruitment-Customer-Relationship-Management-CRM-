@@ -16,21 +16,29 @@ public class Job implements Serializable {
     private final String salaryRange;
     private final String deadline;
 
-    // Persisted flags that the Decorator pattern reads at display time
-    // (see patterns.decorator) to decide how to render this job.
+    /**
+     * Numeric monthly base pay in BDT. Separate from the free-text
+     * salaryRange shown on the listing, because the Decorator chain that
+     * builds an offer package needs a number to calculate from.
+     */
+    private final double baseSalary;
+
+    // Persisted flags that the Decorator pattern reads at display time.
     private boolean featured = false;
     private boolean urgent = false;
 
-    /**
-     * Kept for the simple case and for older calling code.
-     * New code should prefer JobBuilder (see patterns.builder).
-     */
+    /** Kept for the simple case. New code should prefer JobBuilder. */
     public Job(String id, String title, String companyName, JobType type, String description) {
-        this(id, title, companyName, type, description, "", "", "");
+        this(id, title, companyName, type, description, "", "", "", 0);
     }
 
     public Job(String id, String title, String companyName, JobType type, String description,
                String location, String salaryRange, String deadline) {
+        this(id, title, companyName, type, description, location, salaryRange, deadline, 0);
+    }
+
+    public Job(String id, String title, String companyName, JobType type, String description,
+               String location, String salaryRange, String deadline, double baseSalary) {
         this.id = id;
         this.title = title;
         this.companyName = companyName;
@@ -39,6 +47,7 @@ public class Job implements Serializable {
         this.location = location == null ? "" : location;
         this.salaryRange = salaryRange == null ? "" : salaryRange;
         this.deadline = deadline == null ? "" : deadline;
+        this.baseSalary = baseSalary;
     }
 
     public String getId() { return id; }
@@ -49,6 +58,7 @@ public class Job implements Serializable {
     public String getLocation() { return location; }
     public String getSalaryRange() { return salaryRange; }
     public String getDeadline() { return deadline; }
+    public double getBaseSalary() { return baseSalary; }
 
     public boolean isFeatured() { return featured; }
     public void setFeatured(boolean featured) { this.featured = featured; }
