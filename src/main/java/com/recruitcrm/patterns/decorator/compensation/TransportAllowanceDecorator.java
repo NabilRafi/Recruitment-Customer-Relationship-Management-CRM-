@@ -2,7 +2,14 @@ package com.recruitcrm.patterns.decorator.compensation;
 
 import java.util.List;
 
-
+/**
+ * Concrete Decorator: a flat monthly transport allowance.
+ *
+ * A FIXED-amount decorator, in contrast to the percentage ones. Its
+ * contribution does not depend on what it wraps, so moving it around the
+ * chain does not change its own figure - though it does change what any
+ * percentage decorator above it calculates from.
+ */
 public class TransportAllowanceDecorator extends CompensationDecorator {
 
     private final double amount;

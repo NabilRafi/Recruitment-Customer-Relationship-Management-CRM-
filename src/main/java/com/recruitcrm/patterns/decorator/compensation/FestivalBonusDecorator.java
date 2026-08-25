@@ -2,7 +2,14 @@ package com.recruitcrm.patterns.decorator.compensation;
 
 import java.util.List;
 
-
+/**
+ * Concrete Decorator: a festival bonus for a special yearly occasion
+ * (Eid, Pohela Boishakh, a year-end bonus, and so on).
+ *
+ * Expressed as a fraction of one month's pay and spread across the year,
+ * so it can be shown alongside the monthly figures. A full month's bonus
+ * paid once a year is 1/12 of monthly pay when averaged.
+ */
 public class FestivalBonusDecorator extends CompensationDecorator {
 
     private final String occasion;

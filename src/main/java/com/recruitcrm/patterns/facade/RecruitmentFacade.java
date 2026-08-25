@@ -12,7 +12,18 @@ import com.recruitcrm.patterns.strategy.EvaluationStrategy;
 
 import java.util.UUID;
 
-
+/**
+ * FACADE PATTERN.
+ *
+ * One simple entry point that hides the coordination between several
+ * subsystems: DataStore (Singleton), the Strategy family, and the
+ * Observer publisher. Calling code just says "submit this application"
+ * or "move this application to this status" without knowing about any
+ * of the classes underneath.
+ *
+ * Named RecruitmentFacade (not placed in a "Facades" folder) to avoid
+ * any confusion with a framework's own built-in Facade feature.
+ */
 public class RecruitmentFacade {
     private final DataStore dataStore = DataStore.getInstance();
     private final ApplicationStatusPublisher publisher = new ApplicationStatusPublisher();
@@ -29,10 +40,13 @@ public class RecruitmentFacade {
         return application;
     }
 
-    public void updateStatus(Application application, ApplicationStatus newStatus, EvaluationStrategy strategy) {
+    public void updateStatus(Application application, ApplicationStatus newStatus,
+                             EvaluationStrategy strategy, int rawScore) {
         if (strategy != null) {
-            EvaluationResult result = strategy.evaluate(application);
+            EvaluationResult result = strategy.evaluate(application, rawScore);
             application.setLastEvaluationSummary(result.toString());
+            application.setEvaluationScore(result.getScore());   // feeds the performance bonus decorator
+            application.setRequiredDocument(result.getRequiredDocument());
         }
         application.setStatus(newStatus);
         dataStore.saveApplication(application); // re-persist - a field mutation alone doesn't trigger a save

@@ -2,7 +2,10 @@ package com.recruitcrm.patterns.decorator.compensation;
 
 import java.util.List;
 
-
+/**
+ * Concrete Decorator: a flat stipend covering internet and home-office
+ * costs for remote or hybrid roles.
+ */
 public class RemoteWorkStipendDecorator extends CompensationDecorator {
 
     private final double amount;

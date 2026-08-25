@@ -115,6 +115,7 @@
     <div class="topbar-right">
       <span class="who" id="authUser"></span>
       <button class="btn btn-quiet" id="logoutBtn">Sign out</button>
+      <button class="btn btn-quiet" id="addMetricBtn">Add assessment</button>
       <button class="btn btn-primary" id="postRoleBtn">Post a role</button>
     </div>
   </header>
@@ -179,7 +180,10 @@
         </select>
       </label>
       <label>Location <input name="location" placeholder="Dhaka, Bangladesh" /></label>
-      <label>Salary range <input name="salaryRange" placeholder="80,000 - 120,000 BDT / month" /></label>
+      <label>Salary range (shown on the listing) <input name="salaryRange" placeholder="80,000 - 120,000 BDT / month" /></label>
+      <label>Base salary for offers (numeric, BDT/month)
+        <input name="baseSalary" type="number" min="0" step="1000" placeholder="50000" />
+      </label>
       <label>Application deadline <input name="deadline" placeholder="30 September 2026" /></label>
       <label>Description <textarea name="description" rows="3" placeholder="What the role involves"></textarea></label>
       <button type="submit" class="btn btn-primary btn-block">Post role</button>
@@ -199,6 +203,23 @@
       <label>Email <input required type="email" name="candidateEmail" readonly /></label>
       <label>Resume link <input name="resumeLink" placeholder="Link to your CV or portfolio" /></label>
       <button type="submit" class="btn btn-primary btn-block">Submit application</button>
+    </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="metricModal" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h2>Add an assessment type</h2>
+      <button class="modal-close" data-close-modal aria-label="Close">&times;</button>
+    </div>
+    <form id="metricForm">
+      <label>Name <input required name="name" placeholder="Design portfolio review" /></label>
+      <label>Pass mark (0-100) <input name="passMark" type="number" min="0" max="100" value="60" /></label>
+      <label>Document required if below the pass mark
+        <input name="document" placeholder="A portfolio of three recent projects" />
+      </label>
+      <button type="submit" class="btn btn-primary btn-block">Add assessment type</button>
     </form>
   </div>
 </div>

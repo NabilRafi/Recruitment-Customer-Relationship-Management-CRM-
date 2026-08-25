@@ -2,7 +2,11 @@ package com.recruitcrm.patterns.decorator.compensation;
 
 import java.util.List;
 
-
+/**
+ * Concrete Decorator: a housing allowance, set as a percentage of the
+ * compensation beneath it. Common in Bangladeshi salary structures,
+ * where house rent is typically a defined percentage of basic pay.
+ */
 public class HousingAllowanceDecorator extends CompensationDecorator {
 
     private final double percentage;

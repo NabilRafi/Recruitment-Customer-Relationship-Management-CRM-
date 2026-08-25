@@ -2,7 +2,18 @@ package com.recruitcrm.patterns.decorator.compensation;
 
 import java.util.List;
 
-
+/**
+ * Concrete Decorator: a performance bonus earned on the candidate's
+ * evaluation score.
+ *
+ * This is a PERCENTAGE decorator, and that matters: it calculates its
+ * contribution from whatever is underneath it in the chain, so the ORDER
+ * in which decorators are applied changes the final figure. See
+ * CompensationCalculator for a worked example.
+ *
+ * A candidate scoring 78 in their technical evaluation earns a bonus of
+ * 78/10 = 7.8% of everything below this decorator.
+ */
 public class PerformanceBonusDecorator extends CompensationDecorator {
 
     private final int evaluationScore;

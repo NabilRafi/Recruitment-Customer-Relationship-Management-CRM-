@@ -267,7 +267,8 @@ code {
 /* Shared form field styling */
 .gate-panel label,
 #postRoleForm label,
-#applyForm label {
+#applyForm label,
+#metricForm label {
   font-size: 12.5px;
   font-weight: 550;
   color: var(--muted);
@@ -277,7 +278,8 @@ code {
 }
 .gate-panel input, .gate-panel select,
 #postRoleForm input, #postRoleForm select, #postRoleForm textarea,
-#applyForm input {
+#applyForm input,
+#metricForm input {
   font-family: var(--font-body);
   font-size: 14px;
   padding: 10px 12px;
@@ -535,7 +537,7 @@ main { max-width: 1180px; margin: 0 auto; padding: 40px 30px 90px; }
   border: none; background: transparent; font-size: 24px;
   color: var(--faint); cursor: pointer; line-height: 1; padding: 0 4px;
 }
-#postRoleForm, #applyForm { display: flex; flex-direction: column; gap: 14px; }
+#postRoleForm, #applyForm, #metricForm { display: flex; flex-direction: column; gap: 14px; }
 
 .toast {
   position: fixed;
@@ -567,4 +569,120 @@ main { max-width: 1180px; margin: 0 auto; padding: 40px 30px 90px; }
   main { padding: 26px 16px 70px; }
   .pipeline-board { grid-template-columns: 1fr; }
   .my-app { flex-direction: column; gap: 12px; }
+}
+
+/* ---------- Pipeline card controls (expanded) ---------- */
+
+.app-controls .ctl {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--faint);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.app-controls input[type="number"] {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  padding: 6px 8px;
+  border-radius: 5px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  width: 100%;
+}
+
+/* Roomier interview box, and let the recruiter drag it larger. */
+.app-controls textarea[data-interview-for] {
+  min-height: 96px;
+  line-height: 1.5;
+  font-size: 12.5px;
+  resize: vertical;
+}
+
+.app-locked {
+  font-size: 12px;
+  color: var(--faint);
+  font-style: italic;
+  margin: 0;
+}
+
+.app-doc {
+  font-size: 11.8px;
+  color: #8A5A1F;
+  background: #FBF1DF;
+  border-radius: 4px;
+  padding: 6px 8px;
+  line-height: 1.45;
+}
+
+/* ---------- Offer package box ---------- */
+
+.offer-box {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 8px 10px;
+  background: var(--surface);
+}
+.offer-box summary {
+  font-size: 11.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--muted);
+  cursor: pointer;
+}
+.offer-box .hint {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+  color: var(--faint);
+}
+
+.entitlements {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 10px 0 4px;
+}
+.entitlements label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--ink);
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 400;
+}
+.entitlements input[type="checkbox"] { accent-color: var(--accent); }
+
+.bonus-title {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  color: var(--faint);
+  margin: 12px 0 6px;
+}
+.bonus-row {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+/* ---------- Candidate: action needed ---------- */
+
+.my-app-doc {
+  font-size: 12.5px;
+  color: #8A5A1F;
+  background: #FBF1DF;
+  border-radius: 5px;
+  padding: 8px 10px;
+  margin-top: 9px;
+  line-height: 1.5;
 }

@@ -18,7 +18,11 @@ import com.recruitcrm.patterns.observer.EmailNotificationObserver;
 import com.recruitcrm.patterns.singleton.DataStore;
 import com.recruitcrm.patterns.strategy.TechnicalEvaluationStrategy;
 
-
+/**
+ * Console demo that exercises all six design patterns together, the same
+ * way each lecture example ends with a main() that prints output. Use
+ * this as your walkthrough script for the viva.
+ */
 public class Main {
     public static void main(String[] args) {
 
@@ -65,7 +69,7 @@ public class Main {
         Application application = facade.submitApplication(candidate, job);
         System.out.println("Submitted application " + application.getId() + ", status=" + application.getStatus());
 
-        facade.updateStatus(application, ApplicationStatus.SHORTLISTED, new TechnicalEvaluationStrategy());
+        facade.updateStatus(application, ApplicationStatus.SHORTLISTED, new TechnicalEvaluationStrategy(), 78);
         System.out.println("Evaluation summary: " + application.getLastEvaluationSummary());
         System.out.println("New status: " + application.getStatus());
     }

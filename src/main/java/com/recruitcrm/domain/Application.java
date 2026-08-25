@@ -36,7 +36,11 @@ public class Application implements Serializable {
         this.status = status;
     }
 
-
+    /**
+     * Free-text interview details (date, time, place, interviewer) entered
+     * by the recruiter when moving an application to INTERVIEW_SCHEDULED.
+     * Included in the invitation email sent to the candidate.
+     */
     private String interviewDetails = "";
 
     public String getInterviewDetails() {
@@ -46,8 +50,12 @@ public class Application implements Serializable {
     public void setInterviewDetails(String interviewDetails) {
         this.interviewDetails = interviewDetails == null ? "" : interviewDetails;
     }
-    
-        
+
+    /**
+     * Comma-separated entitlement keys the recruiter selected when making
+     * the offer (e.g. "HOUSING,TRANSPORT,PERFORMANCE"). Used to build the
+     * compensation Decorator chain for the offer letter.
+     */
     private String offerEntitlements = "";
 
     public String getOfferEntitlements() {
@@ -67,6 +75,20 @@ public class Application implements Serializable {
 
     public void setEvaluationScore(int evaluationScore) {
         this.evaluationScore = evaluationScore;
+    }
+
+    /**
+     * Document the candidate must supply, decided by the evaluation
+     * strategy based on the score band they fell into.
+     */
+    private String requiredDocument = "";
+
+    public String getRequiredDocument() {
+        return requiredDocument;
+    }
+
+    public void setRequiredDocument(String requiredDocument) {
+        this.requiredDocument = requiredDocument == null ? "" : requiredDocument;
     }
 
     public String getLastEvaluationSummary() {

@@ -10,12 +10,23 @@ const STAGES = [
   { key: "REJECTED",            label: "Closed",      color: "#8C2F39" },
 ];
 
-const STRATEGIES = [
-  { key: "",           label: "No evaluation" },
-  { key: "TECHNICAL",  label: "Technical assessment" },
-  { key: "HR",         label: "HR / culture fit" },
-  { key: "BEHAVIORAL", label: "Behavioural" },
+// Loaded from /api/applications/metrics so recruiter-added assessment
+// types appear without any change to this file.
+let METRICS = [];
+
+// Bonus justifications the recruiter can choose from.
+const BONUS_REASONS = [
+  "Exceptional technical assessment",
+  "Strong cultural fit",
+  "Outstanding behavioural assessment",
+  "Prior relevant experience",
+  "Specialised skill set",
+  "Relocation support",
 ];
+
+// Stage progression order. REJECTED sits outside it because an
+// application can be closed from any point.
+const FORWARD_ORDER = ["APPLIED", "SHORTLISTED", "INTERVIEW_SCHEDULED", "HIRED"];
 
 let jobsCache = [];
 let currentUser = null;
@@ -92,6 +103,7 @@ function applyRoleToChrome() {
     el.hidden = !isCandidate();
   });
   document.getElementById("postRoleBtn").hidden = !isRecruiter();
+  document.getElementById("addMetricBtn").hidden = !isRecruiter();
 
   document.getElementById("openingsSub").textContent = isRecruiter()
     ? "Roles you and your team have posted. Feature or flag a role to lift its visibility score."
@@ -330,10 +342,75 @@ function renderPipeline(applications) {
 }
 
 function renderAppCard(app) {
-  const stageOptions = STAGES.map((s) =>
-    `<option value="${s.key}" ${s.key === app.status ? "selected" : ""}>${s.label}</option>`).join("");
-  const strategyOptions = STRATEGIES.map((s) =>
-    `<option value="${s.key}">${s.label}</option>`).join("");
+  // Forward-only: offer the current stage plus later ones, never earlier.
+  // The server enforces this too - this just keeps the UI honest.
+  const currentIndex = FORWARD_ORDER.indexOf(app.status);
+  const isTerminal = app.status === "HIRED" || app.status === "REJECTED";
+
+  const stageOptions = STAGES
+    .filter((s) => {
+      if (isTerminal) return s.key === app.status;
+      if (s.key === "REJECTED") return true;
+      return FORWARD_ORDER.indexOf(s.key) >= currentIndex;
+    })
+    .map((s) => `<option value="${s.key}" ${s.key === app.status ? "selected" : ""}>${s.label}</option>`)
+    .join("");
+
+  const metricOptions = ['<option value="">No assessment</option>']
+    .concat(METRICS.map((m) => `<option value="${m.key}">${escapeHtml(m.name)}</option>`))
+    .join("");
+
+  const reasonOptions = BONUS_REASONS
+    .map((r) => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`)
+    .join("");
+
+  const controls = isTerminal ? `
+      <div class="app-controls">
+        <p class="app-locked">This application is closed. No further moves are possible.</p>
+      </div>` : `
+      <div class="app-controls">
+        <label class="ctl">Move to
+          <select data-status-for="${app.id}">${stageOptions}</select>
+        </label>
+
+        <label class="ctl">Assessment
+          <select data-strategy-for="${app.id}">${metricOptions}</select>
+        </label>
+
+        <label class="ctl">Score (0-100)
+          <input type="number" min="0" max="100" step="1" placeholder="e.g. 78"
+                 data-score-for="${app.id}" />
+        </label>
+
+        <label class="ctl">Interview details
+          <textarea data-interview-for="${app.id}" rows="5"
+                    placeholder="Date: 26 August 2026&#10;Time: 11:00 AM&#10;Place: Level 7, TechNova Tower&#10;With: Rita Rahman, Engineering Manager"></textarea>
+        </label>
+
+        <details class="offer-box">
+          <summary>Offer package <span class="hint">(used when moving to Offer)</span></summary>
+
+          <div class="entitlements">
+            <label><input type="checkbox" value="HOUSING"   data-ent-for="${app.id}" /> House rent (40%)</label>
+            <label><input type="checkbox" value="TRANSPORT" data-ent-for="${app.id}" /> Transport (5,000)</label>
+            <label><input type="checkbox" value="REMOTE"    data-ent-for="${app.id}" /> Remote stipend (3,500)</label>
+            <label><input type="checkbox" value="FESTIVAL"  data-ent-for="${app.id}" /> Festival bonus (2 mo/yr)</label>
+            <label><input type="checkbox" value="PERFORMANCE" data-ent-for="${app.id}" /> Performance bonus (from score)</label>
+          </div>
+
+          <p class="bonus-title">Discretionary bonuses</p>
+          <div class="bonus-row">
+            <select data-bonus-reason="${app.id}-1"><option value="">— reason —</option>${reasonOptions}</select>
+            <input type="number" min="0" step="500" placeholder="Amount BDT" data-bonus-amount="${app.id}-1" />
+          </div>
+          <div class="bonus-row">
+            <select data-bonus-reason="${app.id}-2"><option value="">— reason —</option>${reasonOptions}</select>
+            <input type="number" min="0" step="500" placeholder="Amount BDT" data-bonus-amount="${app.id}-2" />
+          </div>
+        </details>
+
+        <button class="btn btn-primary btn-small" data-advance="${app.id}">Move stage</button>
+      </div>`;
 
   return `
     <div class="app-card" style="--stage-color:${stageOf(app.status).color}">
@@ -341,13 +418,8 @@ function renderAppCard(app) {
       <div class="app-job">${escapeHtml(app.jobTitle)}</div>
       <div class="app-id">#${escapeHtml(app.id)}</div>
       ${app.evaluationSummary ? `<div class="app-eval">${escapeHtml(app.evaluationSummary)}</div>` : ""}
-      <div class="app-controls">
-        <select data-status-for="${app.id}">${stageOptions}</select>
-        <select data-strategy-for="${app.id}">${strategyOptions}</select>
-        <textarea data-interview-for="${app.id}" rows="2"
-                  placeholder="Interview details — date, time, place (sent to the candidate)"></textarea>
-        <button class="btn btn-primary btn-small" data-advance="${app.id}">Move stage</button>
-      </div>
+      ${app.requiredDocument ? `<div class="app-doc"><strong>Awaiting:</strong> ${escapeHtml(app.requiredDocument)}</div>` : ""}
+      ${controls}
     </div>`;
 }
 
@@ -371,6 +443,8 @@ function renderMyApplications(applications) {
           <div class="my-app-co">Reference ${escapeHtml(app.id)}</div>
           ${app.evaluationSummary
             ? `<div class="my-app-eval">${escapeHtml(app.evaluationSummary)}</div>` : ""}
+          ${app.requiredDocument
+            ? `<div class="my-app-doc"><strong>Action needed:</strong> ${escapeHtml(app.requiredDocument)}</div>` : ""}
         </div>
         <span class="status-pill" style="--stage-color:${stage.color}">${stage.label}</span>
       </article>`;
@@ -381,12 +455,32 @@ document.getElementById("pipelineBoard").addEventListener("click", async (e) => 
   const btn = e.target.closest("[data-advance]");
   if (!btn) return;
   const id = btn.dataset.advance;
+
   const status = document.querySelector(`[data-status-for="${id}"]`).value;
   const strategy = document.querySelector(`[data-strategy-for="${id}"]`).value;
+  const score = document.querySelector(`[data-score-for="${id}"]`).value || "0";
   const interviewDetails = document.querySelector(`[data-interview-for="${id}"]`).value;
 
+  // Build the entitlements string the Decorator chain is assembled from.
+  // Fixed-rule entitlements are plain keys; discretionary bonuses carry
+  // their reason and amount as "BONUS:<reason>:<amount>".
+  const parts = [];
+  document.querySelectorAll(`[data-ent-for="${id}"]:checked`)
+    .forEach((cb) => parts.push(cb.value));
+
+  [1, 2].forEach((n) => {
+    const reason = document.querySelector(`[data-bonus-reason="${id}-${n}"]`)?.value;
+    const amount = document.querySelector(`[data-bonus-amount="${id}-${n}"]`)?.value;
+    if (reason && amount && Number(amount) > 0) {
+      parts.push(`BONUS:${reason}:${amount}`);
+    }
+  });
+
   try {
-    await apiPost(`/api/applications/${id}/status`, { status, strategy, interviewDetails });
+    await apiPost(`/api/applications/${id}/status`, {
+      status, strategy, score, interviewDetails,
+      entitlements: parts.join(","),
+    });
     showToast("Stage updated — candidate notified by email.");
     await loadApplications();
   } catch (err) {
@@ -394,9 +488,36 @@ document.getElementById("pipelineBoard").addEventListener("click", async (e) => 
   }
 });
 
+// ---------- add a custom assessment type ----------
+
+document.getElementById("addMetricBtn").addEventListener("click", () => openModal("metricModal"));
+
+document.getElementById("metricForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  try {
+    const created = await apiPost("/api/applications/metrics", Object.fromEntries(new FormData(e.target)));
+    e.target.reset();
+    closeModal("metricModal");
+    await loadMetrics();
+    await loadApplications();
+    showToast(`"${created.name}" is now available as an assessment type.`);
+  } catch (err) {
+    showToast("Couldn't add assessment type — " + err.message);
+  }
+});
+
 // ---------- init ----------
 
+async function loadMetrics() {
+  try {
+    METRICS = await apiGet("/api/applications/metrics");
+  } catch (err) {
+    METRICS = [];
+  }
+}
+
 async function refreshAll() {
+  if (isRecruiter()) await loadMetrics();
   await loadJobs();
   await loadApplications();
 }
