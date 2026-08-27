@@ -129,12 +129,7 @@ public class ApplicationsHandler implements HttpHandler {
             throw new IllegalArgumentException("No job with id " + jobId);
         }
 
-        // Only a logged-in CANDIDATE may apply. requireRole sends the 401/403
-        // itself and throws AuthFailure, which the handler catches.
-        //
-        // Previously any logged-in user could apply by supplying a candidate
-        // email in the form, which let a recruiter apply on someone else's
-        // behalf - and silently created accounts for people who never signed up.
+        
         UserAccount currentUser = AuthUtil.requireRole(exchange, "CANDIDATE");
 
         if (!currentUser.getEmail().equalsIgnoreCase(email)) {
@@ -149,7 +144,7 @@ public class ApplicationsHandler implements HttpHandler {
             candidate = new Candidate(candidate.getName(), candidate.getEmail(), resumeLink);
         }
 
-        // FR6: block a second application to the same job.
+        
         if (store.applicationExists(candidate.getEmail(), jobId)) {
             throw new IllegalArgumentException("You have already applied to this role");
         }
@@ -175,9 +170,7 @@ public class ApplicationsHandler implements HttpHandler {
             throw new IllegalArgumentException("Unknown status: " + statusRaw);
         }
 
-        // Recruiter-supplied interview details, used by the invitation email.
-        // Entitlements the recruiter ticked when making the offer. These
-        // become the Decorator chain in the offer letter.
+        
         String entitlements = form.getOrDefault("entitlements", "");
         if (!entitlements.isBlank()) {
             application.setOfferEntitlements(entitlements);
@@ -188,8 +181,7 @@ public class ApplicationsHandler implements HttpHandler {
             application.setInterviewDetails(interviewDetails);
         }
 
-        // Strategy chosen from the registry - a map lookup, and the registry
-        // can gain new metrics at runtime without this code changing.
+        
         EvaluationStrategy strategy = EvaluationStrategyRegistry.getInstance().get(strategyRaw);
 
         int rawScore = 0;
@@ -203,9 +195,7 @@ public class ApplicationsHandler implements HttpHandler {
         if (strategy != null && !form.getOrDefault("score", "").isBlank()) {
             // a score was supplied - use it
         } // null is fine - means "no evaluation this time"
-        // Forward-only: an application may not return to an earlier stage.
-        // Enforced on the server, because hiding options in the browser
-        // dropdown is presentation, not a rule.
+        
         if (!isForwardMove(application.getStatus(), newStatus)) {
             throw new IllegalArgumentException(
                     "Cannot move an application back from " + application.getStatus() + " to " + newStatus);

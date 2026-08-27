@@ -10,28 +10,7 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-/**
- * ADAPTER PATTERN — the "Adaptee".
- *
- * This class speaks SMTP, the protocol mail servers actually use. Its
- * interface is nothing like the one our application wants: instead of a
- * single send() call, it is a back-and-forth conversation of text
- * commands, each of which returns a numeric status code that must be
- * checked before the next command is sent:
- *
- *     EHLO       -> 250
- *     AUTH LOGIN -> 334, then base64 username -> 334, then password -> 235
- *     MAIL FROM  -> 250
- *     RCPT TO    -> 250
- *     DATA       -> 354, then the message, then "." -> 250
- *     QUIT
- *
- * Nothing in the CRM should have to know any of that. SmtpEmailAdapter
- * wraps this class and exposes the simple EmailSender interface instead.
- *
- * Connects over implicit TLS (port 465), which is encrypted from the
- * first byte and avoids the extra STARTTLS negotiation step.
- */
+
 public class SmtpClient {
 
     private final String host;
