@@ -10,7 +10,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-
+/** Reads/writes account rows including password credentials. */
 public final class AuthRepository {
     private AuthRepository() {}
 
@@ -77,14 +77,52 @@ public final class AuthRepository {
 
     public record AccountCredentials(UserAccount account, String passwordHash, String passwordSalt) {}
 
-    
+    /**
+     * Rebuilds a UserAccount from a database row.
+     *
+     * IMPORTANT (viva point): this deliberately goes through the Factory
+     * Method registry rather than a switch/if-else on the role string.
+     * Reading a row back from the database is still *object creation*, so
+     * it has to obey the same rule as registration does — otherwise the
+     * banned "decide the class with a conditional" logic just reappears
+     * here, in the persistence layer, where it is easy to miss.
+     *
+     * The registry maps role -> the one factory that builds that type, so
+     * adding a fourth account type means registering one more factory and
+     * changing nothing in this class.
+     */
+    /**
+     * Updates only the "extra" column for one account.
+     *
+     * Used when a candidate uploads a new resume while applying. A full
+     * account save is deliberately avoided here because it would rewrite
+     * the password columns.
+     */
+    public static void updateExtra(String email, String extra) {
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "UPDATE accounts SET extra = ? WHERE LOWER(email) = LOWER(?)")) {
+            ps.setString(1, extra);
+            ps.setString(2, email);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Could not update resume", e);
+        }
+    }
+
     private static UserAccount toAccount(String email, String role, String name, String extra) {
         String safeExtra = extra == null ? "" : extra;
         UserAccountFactory factory = UserAccountFactoryRegistry.getInstance().getFactory(role);
         return factory.createAccount(name, email, safeExtra);
     }
 
-    
+    /**
+     * Reads the account's type-specific "extra" field.
+     *
+     * Also a viva point: this asks the object for its own value instead of
+     * testing "is it a Candidate? is it a Recruiter?" with instanceof.
+     * Polymorphism replaces the type-check chain — see UserAccount.getExtra.
+     */
     private static String extraFor(UserAccount account) {
         return account.getExtra();
     }

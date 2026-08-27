@@ -1,12 +1,11 @@
 package com.recruitcrm.patterns.singleton;
 
-import com.recruitcrm.patterns.builder.JobBuilder;
-
 import com.recruitcrm.domain.Application;
 import com.recruitcrm.domain.ApplicationStatus;
 import com.recruitcrm.domain.Candidate;
 import com.recruitcrm.domain.Job;
 import com.recruitcrm.domain.JobType;
+import com.recruitcrm.patterns.builder.JobBuilder;
 import com.recruitcrm.domain.UserAccount;
 import com.recruitcrm.persistence.Database;
 import com.recruitcrm.web.AuthRepository;
@@ -19,7 +18,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-
+/**
+ * SINGLETON PATTERN.
+ *
+ * One shared data access point for the whole application. Persistence
+ * is backed by SQLite (see persistence.Database) instead of Java
+ * serialization — data survives restarts and is queryable like a
+ * real database.
+ */
 public final class DataStore {
     private static DataStore instance;
 
@@ -162,6 +168,42 @@ public final class DataStore {
         }
     }
 
+    /**
+     * True when this candidate has already applied to this job.
+     *
+     * FR6 in the proposal, and the guard shown in sequence diagram 5.1:
+     * a candidate must not be able to apply to the same role twice.
+     * Checked in SQL so the answer is authoritative rather than depending
+     * on what happens to be loaded in memory.
+     */
+    public boolean applicationExists(String candidateEmail, String jobId) {
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement(
+                     "SELECT 1 FROM applications WHERE LOWER(candidate_email) = LOWER(?) AND job_id = ?")) {
+            ps.setString(1, candidateEmail);
+            ps.setString(2, jobId);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+        } catch (SQLException e) {
+            throw new IllegalStateException("Could not check for an existing application", e);
+        }
+    }
+
+    /**
+     * Removes an application. Used when a candidate withdraws (FR8).
+     * Returns false when no row matched.
+     */
+    public synchronized boolean deleteApplication(String id) {
+        try (Connection conn = Database.getConnection();
+             PreparedStatement ps = conn.prepareStatement("DELETE FROM applications WHERE id = ?")) {
+            ps.setString(1, id);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Could not withdraw application", e);
+        }
+    }
+
     public Application getApplication(String id) {
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(
@@ -185,7 +227,10 @@ public final class DataStore {
                      "SELECT id, candidate_email, job_id, status, evaluation_summary, evaluation_score, offer_entitlements FROM applications ORDER BY id");
              ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                apps.add(rowToApplication(rs));
+                Application app = rowToApplication(rs);
+                if (app != null) {          // skip orphaned rows
+                    apps.add(app);
+                }
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Could not list applications", e);
@@ -193,15 +238,28 @@ public final class DataStore {
         return apps;
     }
 
+    /**
+     * Rebuilds an Application from a database row.
+     *
+     * Returns null when the row references a candidate or job that no longer
+     * exists, rather than throwing. An orphaned row is bad data, but it must
+     * not take down the whole list - one unreadable application should not
+     * stop a recruiter seeing every other one. The row is reported once so
+     * the problem is visible rather than silent.
+     */
     private Application rowToApplication(ResultSet rs) throws SQLException {
         String id = rs.getString("id");
         UserAccount account = AuthRepository.loadAccount(rs.getString("candidate_email"));
         if (!(account instanceof Candidate candidate)) {
-            throw new IllegalStateException("Application candidate not found: " + rs.getString("candidate_email"));
+            System.err.println("[DATA] Skipping application " + id
+                    + " - candidate not found: " + rs.getString("candidate_email"));
+            return null;
         }
         Job job = getJob(rs.getString("job_id"));
         if (job == null) {
-            throw new IllegalStateException("Application job not found: " + rs.getString("job_id"));
+            System.err.println("[DATA] Skipping application " + id
+                    + " - job not found: " + rs.getString("job_id"));
+            return null;
         }
         Application app = new Application(id, candidate, job);
         app.setStatus(ApplicationStatus.valueOf(rs.getString("status")));
@@ -211,6 +269,13 @@ public final class DataStore {
         return app;
     }
 
+    /**
+     * Rebuilds a Job from a database row using the BUILDER pattern.
+     *
+     * Using the builder here means the row -> object mapping names every
+     * field it sets, instead of relying on the order of an 8-argument
+     * constructor call.
+     */
     private Job rowToJob(ResultSet rs) throws SQLException {
         return new JobBuilder()
                 .id(rs.getString("id"))

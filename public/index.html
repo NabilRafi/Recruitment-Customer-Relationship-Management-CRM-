@@ -83,6 +83,9 @@
         <label id="registerExtraLabel">Resume link
           <input name="extra" placeholder="Link to your CV or portfolio" />
         </label>
+        <label id="registerResumeUpload">Or upload a PDF (max 2 MB)
+          <input type="file" name="resumeFile" accept="application/pdf" />
+        </label>
         <button type="submit" class="btn btn-primary btn-block">Create account</button>
       </form>
     </div>
@@ -127,6 +130,20 @@
         <h1>Open roles</h1>
         <p class="view-sub" id="openingsSub"></p>
       </div>
+      <div id="jobFilters" class="filter-bar" hidden>
+        <input id="filter-keyword" type="search" placeholder="Search title, company or description" />
+        <input id="filter-location" type="search" placeholder="Location" />
+        <select id="filter-type">
+          <option value="">Any type</option>
+          <option value="FULL_TIME">Full time</option>
+          <option value="PART_TIME">Part time</option>
+          <option value="INTERNSHIP">Internship</option>
+          <option value="CONTRACT">Contract</option>
+        </select>
+        <button class="btn btn-quiet btn-small" id="clearFilters">Clear</button>
+        <span class="job-count" id="jobCount"></span>
+      </div>
+
       <div id="jobsGrid" class="jobs-grid"></div>
       <div id="jobsEmpty" class="empty-state" hidden>
         <p>No roles posted yet.</p>
@@ -202,6 +219,9 @@
       <label>Your name <input required name="candidateName" /></label>
       <label>Email <input required type="email" name="candidateEmail" readonly /></label>
       <label>Resume link <input name="resumeLink" placeholder="Link to your CV or portfolio" /></label>
+      <label>Or upload a PDF (max 2 MB)
+        <input type="file" name="resumeFile" accept="application/pdf" />
+      </label>
       <button type="submit" class="btn btn-primary btn-block">Submit application</button>
     </form>
   </div>

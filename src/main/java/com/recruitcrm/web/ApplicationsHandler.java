@@ -69,6 +69,8 @@ public class ApplicationsHandler implements HttpHandler {
                 listMetrics(exchange);
             } else if (method.equals("POST") && segments.length == 4 && segments[3].equals("metrics")) {
                 addMetric(exchange);
+            } else if (method.equals("DELETE") && segments.length == 4) {
+                withdrawApplication(exchange, segments[3]);
             } else if (method.equals("POST") && segments.length == 5 && segments[4].equals("status")) {
                 AuthUtil.requireRole(exchange, "RECRUITER");
                 updateStatus(exchange, segments[3]);
@@ -114,6 +116,12 @@ public class ApplicationsHandler implements HttpHandler {
         String name = require(form, "candidateName");
         String email = require(form, "candidateEmail").toLowerCase();
         String resumeLink = form.getOrDefault("resumeLink", "");
+
+        // A PDF uploaded with the application replaces the stored link.
+        String uploadedPdf = form.get("resumeFile");
+        if (uploadedPdf != null && !uploadedPdf.isBlank()) {
+            resumeLink = ResumeStorage.saveBase64Pdf(uploadedPdf);
+        }
         String jobId = require(form, "jobId");
 
         Job job = store.getJob(jobId);
@@ -133,6 +141,18 @@ public class ApplicationsHandler implements HttpHandler {
             throw new IllegalArgumentException("Use your logged-in email when applying");
         }
         Candidate candidate = (Candidate) currentUser;
+
+        // Persist a newly uploaded resume against the account, and use the
+        // updated candidate for this application.
+        if (!resumeLink.isBlank() && !resumeLink.equals(candidate.getExtra())) {
+            AuthRepository.updateExtra(candidate.getEmail(), resumeLink);
+            candidate = new Candidate(candidate.getName(), candidate.getEmail(), resumeLink);
+        }
+
+        // FR6: block a second application to the same job.
+        if (store.applicationExists(candidate.getEmail(), jobId)) {
+            throw new IllegalArgumentException("You have already applied to this role");
+        }
 
         Application application = facade.submitApplication(candidate, job);
         RequestUtil.sendJson(exchange, 201, toJson(application));
@@ -250,6 +270,35 @@ public class ApplicationsHandler implements HttpHandler {
 
         RequestUtil.sendJson(exchange, 201, JsonWriter.obj()
                 .put("key", key).put("name", name).put("passMark", passMark).toString());
+    }
+
+    /**
+     * FR8: a candidate withdraws their own application.
+     *
+     * Two guards, both server-side: only the owning candidate may withdraw,
+     * and only while the application is still in the APPLIED stage. Once a
+     * recruiter has begun assessing it, withdrawal is no longer permitted.
+     */
+    private void withdrawApplication(HttpExchange exchange, String applicationId) throws IOException {
+        UserAccount user = AuthUtil.requireRole(exchange, "CANDIDATE");
+
+        Application application = store.getApplication(applicationId);
+        if (application == null) {
+            throw new IllegalArgumentException("No application with id " + applicationId);
+        }
+        if (!application.getCandidate().getEmail().equalsIgnoreCase(user.getEmail())) {
+            RequestUtil.sendError(exchange, 403, "You can only withdraw your own application");
+            return;
+        }
+        if (application.getStatus() != ApplicationStatus.APPLIED) {
+            throw new IllegalArgumentException(
+                    "This application can no longer be withdrawn - it is already at the "
+                    + application.getStatus() + " stage");
+        }
+
+        store.deleteApplication(applicationId);
+        RequestUtil.sendJson(exchange, 200,
+                JsonWriter.obj().put("withdrawn", true).put("id", applicationId).toString());
     }
 
     private String toJson(Application app) {

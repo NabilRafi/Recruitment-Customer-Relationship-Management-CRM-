@@ -12,7 +12,15 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Optional;
 
-
+/**
+ * Authentication routes backed by SQLite sessions.
+ *
+ * Routes:
+ *   POST /api/auth/register
+ *   POST /api/auth/login
+ *   POST /api/auth/logout
+ *   GET  /api/auth/me
+ */
 public class AuthHandler implements HttpHandler {
     private final DataStore store = DataStore.getInstance();
 
@@ -78,6 +86,13 @@ public class AuthHandler implements HttpHandler {
         }
         if (AuthRepository.emailExists(email)) {
             throw new IllegalArgumentException("An account with this email already exists");
+        }
+
+        // A candidate may upload a PDF instead of pasting a link. If a file
+        // was sent it wins, and its URL becomes the account's "extra" field.
+        String uploadedPdf = form.get("resumeFile");
+        if (uploadedPdf != null && !uploadedPdf.isBlank()) {
+            extra = ResumeStorage.saveBase64Pdf(uploadedPdf);
         }
 
         UserAccountFactory factory = UserAccountFactoryRegistry.getInstance().getFactory(type);

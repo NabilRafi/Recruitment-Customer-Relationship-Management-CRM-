@@ -12,7 +12,7 @@
 ## About
 
 A recruitment CRM written in **plain Java with no framework**, implementing
-**nine design patterns** by hand. It runs as a complete web
+**nine Gang of Four design patterns** by hand. It runs as a complete web
 application — REST API, session authentication, SQLite database, real SMTP
 email, and an HTML/CSS/JS frontend — all served from a single process.
 
@@ -28,7 +28,11 @@ attributed to a framework.
 | Automated tests | 117 JUnit 5 tests, all passing |
 | External libraries | 1 (SQLite JDBC driver) |
 | Database tables | 4 |
+| Requirements delivered | 8 of 17 fully, 3 partial |
 
+**Full technical documentation:** see [`PATTERNS_EXPLAINED.md`](PATTERNS_EXPLAINED.md)
+— line-by-line breakdowns of all nine patterns plus the database layer,
+request lifecycle, and authentication design.
 
 ---
 
@@ -48,7 +52,7 @@ attributed to a framework.
 
 ### Notes on two of them
 
-**Decorator** was rebuilt after course instructor feedback. The first version added
+**Decorator** was rebuilt after instructor feedback. The first version added
 Featured/Urgent badges to job postings, which only *highlighted* a posting
 rather than adding responsibility to it. The current version decorates
 compensation: each decorator contributes to the description, the monthly
@@ -58,8 +62,32 @@ the result** — housing-then-transport gives 75,000 while transport-then-housin
 gives 77,000. This is asserted by the test suite.
 
 **Observer** is hand-written rather than using `java.util.Observer`, both
-because the project requires it and because those classes have been
+because the assignment requires it and because those classes have been
 deprecated since Java 9.
+
+---
+
+## Features
+
+**Candidates** browse open roles with keyword, location and type filters; apply
+with a CV — pasted as a link or uploaded as a PDF; track every application's
+stage; and withdraw while an application is still at the Applied stage.
+Duplicate applications to the same role are refused.
+
+**Recruiters** post roles, mark them Featured or Urgent, and work a five-stage
+pipeline. Each move runs the evaluation they select, records a score they enter
+themselves, and emails the candidate. New assessment types can be defined at
+runtime. Offers carry an itemised compensation package built by the Decorator
+chain.
+
+**Resume uploads** are validated by magic bytes rather than file extension, so a
+renamed executable is rejected. They are capped at 2 MB, stored under a
+server-generated filename to prevent path traversal, and served only to
+authenticated users. The file travels as Base64 inside an ordinary form field,
+which means the backend needs no multipart parser.
+
+**Stage transitions are forward-only** and enforced server-side — an application
+can never move backwards, and Hired and Rejected are terminal.
 
 ---
 
@@ -110,6 +138,9 @@ Then:
 ```bash
 ./run-tests.sh
 ```
+
+`run-tests.sh` points the suite at a throwaway database under `build/`, so
+running the tests can never touch `data/crm.db`.
 
 117 tests across nine suites — one per pattern. Notable cases:
 
@@ -203,7 +234,9 @@ place rather than wiped.
 | POST | `/api/applications/{id}/status` | Recruiter | Advance a stage, run an evaluation, attach an offer |
 | GET | `/api/applications/metrics` | Recruiter | List assessment types |
 | POST | `/api/applications/metrics` | Recruiter | Register a new assessment type at runtime |
+| DELETE | `/api/applications/{id}` | Candidate | Withdraw own application (only while Applied) |
 | GET | `/api/candidates/{email}` | Logged in | Profile — **fields masked by the Proxy** unless authorised |
+| GET | `/api/resumes/{file}` | Logged in | Download an uploaded CV |
 | POST | `/api/accounts` | — | Create an account without credentials |
 
 ---

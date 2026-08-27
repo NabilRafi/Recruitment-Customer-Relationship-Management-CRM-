@@ -25,6 +25,17 @@ mkdir -p out-test
 javac -cp "out:lib/sqlite-jdbc.jar:$JUNIT" -d out-test $(find src/test/java -name "*.java")
 
 echo "==> Running tests"
+# Point the tests at a THROWAWAY database.
+#
+# FacadeTest exercises the real RecruitmentFacade, which holds the DataStore
+# singleton and therefore writes to whatever database is configured. Without
+# this line the tests would write rows into data/crm.db - including
+# applications for candidates that were never registered, which then break
+# the running application. Tests must never touch real data.
+rm -rf build/test-data
+mkdir -p build/test-data
+export DATABASE_PATH="build/test-data/test.db"
+
 java -jar "$JUNIT" execute \
   --class-path "out:out-test:lib/sqlite-jdbc.jar" \
   --scan-class-path out-test \

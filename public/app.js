@@ -29,6 +29,11 @@ const BONUS_REASONS = [
 const FORWARD_ORDER = ["APPLIED", "SHORTLISTED", "INTERVIEW_SCHEDULED", "HIRED"];
 
 let jobsCache = [];
+
+// FR5: current search filters. Applied in the browser over the loaded
+// listings - the full set is small enough that a round trip per keystroke
+// would be wasteful.
+let jobFilters = { keyword: "", location: "", type: "" };
 let currentUser = null;
 
 // ---------- helpers ----------
@@ -48,6 +53,45 @@ async function apiPost(path, fields) {
   });
   if (!res.ok) throw new Error((await res.json()).error || res.statusText);
   return res.json();
+}
+
+async function apiDelete(path) {
+  const res = await fetch(path, { method: "DELETE", credentials: "same-origin" });
+  if (!res.ok) throw new Error((await res.json()).error || res.statusText);
+  return res.json();
+}
+
+/**
+ * Reads a File as a Base64 data URL.
+ *
+ * The PDF travels inside an ordinary form field rather than as a
+ * multipart upload, which means the Java backend needs no multipart
+ * parser - the existing form parser handles it unchanged.
+ */
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Could not read the file"));
+    reader.readAsDataURL(file);
+  });
+}
+
+/** Turns a form into a plain object, converting any chosen file to Base64. */
+async function formToFields(formEl) {
+  const fields = {};
+  for (const [key, value] of new FormData(formEl).entries()) {
+    if (value instanceof File) {
+      if (value.size === 0) continue;                 // nothing chosen
+      if (value.size > 2 * 1024 * 1024) {
+        throw new Error("That PDF is larger than 2 MB");
+      }
+      fields[key] = await readFileAsBase64(value);
+    } else {
+      fields[key] = value;
+    }
+  }
+  return fields;
 }
 
 function showToast(message) {
@@ -157,6 +201,10 @@ document.getElementById("registerType").addEventListener("change", (e) => {
   const [text, placeholder] = labels[e.target.value] || labels.CANDIDATE;
   label.firstChild.textContent = text + " ";
   input.placeholder = placeholder;
+
+  // Only candidates upload a resume.
+  const upload = document.getElementById("registerResumeUpload");
+  if (upload) upload.hidden = e.target.value !== "CANDIDATE";
 });
 
 document.getElementById("loginForm").addEventListener("submit", async (e) => {
@@ -175,7 +223,7 @@ document.getElementById("loginForm").addEventListener("submit", async (e) => {
 document.getElementById("registerForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   try {
-    currentUser = await apiPost("/api/auth/register", Object.fromEntries(new FormData(e.target)));
+    currentUser = await apiPost("/api/auth/register", await formToFields(e.target));
     e.target.reset();
     showApp();
     await refreshAll();
@@ -204,19 +252,47 @@ async function loadJobs() {
   renderJobs();
 }
 
+/** FR5: narrows the loaded listings by keyword, location and employment type. */
+function filteredJobs() {
+  const kw = jobFilters.keyword.trim().toLowerCase();
+  const loc = jobFilters.location.trim().toLowerCase();
+
+  return jobsCache.filter((job) => {
+    if (jobFilters.type && job.type !== jobFilters.type) return false;
+    if (loc && !(job.location || "").toLowerCase().includes(loc)) return false;
+    if (kw) {
+      const haystack = [job.title, job.company, job.description]
+        .map((v) => (v || "").toLowerCase()).join(" ");
+      if (!haystack.includes(kw)) return false;
+    }
+    return true;
+  });
+}
+
 function renderJobs() {
   const grid = document.getElementById("jobsGrid");
   const empty = document.getElementById("jobsEmpty");
   document.getElementById("emptyPostRoleBtn").hidden = !isRecruiter();
 
-  if (!jobsCache.length) {
+  const visible = filteredJobs();
+  const filterBar = document.getElementById("jobFilters");
+  if (filterBar) filterBar.hidden = false;
+
+  const countEl = document.getElementById("jobCount");
+  if (countEl) {
+    countEl.textContent = visible.length === jobsCache.length
+      ? `${jobsCache.length} open role${jobsCache.length === 1 ? "" : "s"}`
+      : `${visible.length} of ${jobsCache.length} roles match`;
+  }
+
+  if (!visible.length) {
     grid.innerHTML = "";
     empty.hidden = false;
     return;
   }
   empty.hidden = true;
 
-  grid.innerHTML = jobsCache.map((job) => {
+  grid.innerHTML = visible.map((job) => {
     const meta = [
       job.type.replace("_", " "),
       job.location,
@@ -246,6 +322,22 @@ function renderJobs() {
     `;
   }).join("");
 }
+
+["keyword", "location", "type"].forEach((field) => {
+  const el = document.getElementById("filter-" + field);
+  if (!el) return;
+  el.addEventListener("input", () => { jobFilters[field] = el.value; renderJobs(); });
+  el.addEventListener("change", () => { jobFilters[field] = el.value; renderJobs(); });
+});
+
+document.getElementById("clearFilters").addEventListener("click", () => {
+  jobFilters = { keyword: "", location: "", type: "" };
+  ["keyword", "location", "type"].forEach((f) => {
+    const el = document.getElementById("filter-" + f);
+    if (el) el.value = "";
+  });
+  renderJobs();
+});
 
 document.getElementById("jobsGrid").addEventListener("click", async (e) => {
   const applyBtn = e.target.closest("[data-apply]");
@@ -303,7 +395,7 @@ function openApplyModal(jobId, title) {
 document.getElementById("applyForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   try {
-    await apiPost("/api/applications", Object.fromEntries(new FormData(e.target)));
+    await apiPost("/api/applications", await formToFields(e.target));
     closeModal("applyModal");
     showToast("Application submitted. Check your email for confirmation.");
     await loadApplications();
@@ -445,8 +537,14 @@ function renderMyApplications(applications) {
             ? `<div class="my-app-eval">${escapeHtml(app.evaluationSummary)}</div>` : ""}
           ${app.requiredDocument
             ? `<div class="my-app-doc"><strong>Action needed:</strong> ${escapeHtml(app.requiredDocument)}</div>` : ""}
+          ${currentUser?.extra && currentUser.extra.startsWith("/api/resumes/")
+            ? `<div class="my-app-resume"><a href="${escapeHtml(currentUser.extra)}" target="_blank" rel="noopener">View my uploaded resume (PDF)</a></div>` : ""}
         </div>
-        <span class="status-pill" style="--stage-color:${stage.color}">${stage.label}</span>
+        <div class="my-app-side">
+          <span class="status-pill" style="--stage-color:${stage.color}">${stage.label}</span>
+          ${app.status === "APPLIED"
+            ? `<button class="btn btn-ghost btn-small" data-withdraw="${app.id}">Withdraw</button>` : ""}
+        </div>
       </article>`;
   }).join("");
 }
@@ -503,6 +601,24 @@ document.getElementById("metricForm").addEventListener("submit", async (e) => {
     showToast(`"${created.name}" is now available as an assessment type.`);
   } catch (err) {
     showToast("Couldn't add assessment type — " + err.message);
+  }
+});
+
+// ---------- FR8: withdraw an application ----------
+
+document.getElementById("myApplications").addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-withdraw]");
+  if (!btn) return;
+
+  if (!confirm("Withdraw this application? This cannot be undone, though you may apply again later.")) {
+    return;
+  }
+  try {
+    await apiDelete(`/api/applications/${btn.dataset.withdraw}`);
+    showToast("Application withdrawn.");
+    await loadApplications();
+  } catch (err) {
+    showToast("Couldn't withdraw \u2014 " + err.message);
   }
 });
 
