@@ -12,7 +12,7 @@
 ## About
 
 A recruitment CRM written in **plain Java with no framework**, implementing
-**nine Gang of Four design patterns** by hand. It runs as a complete web
+**nine design patterns** by hand. It runs as a complete web
 application — REST API, session authentication, SQLite database, real SMTP
 email, and an HTML/CSS/JS frontend — all served from a single process.
 
@@ -29,9 +29,6 @@ attributed to a framework.
 | External libraries | 1 (SQLite JDBC driver) |
 | Database tables | 4 |
 
-**Full technical documentation:** see [`PATTERNS_EXPLAINED.md`](PATTERNS_EXPLAINED.md)
-— line-by-line breakdowns of all nine patterns plus the database layer,
-request lifecycle, and authentication design.
 
 ---
 
@@ -51,7 +48,7 @@ request lifecycle, and authentication design.
 
 ### Notes on two of them
 
-**Decorator** was rebuilt after instructor feedback. The first version added
+**Decorator** was rebuilt after course instructor feedback. The first version added
 Featured/Urgent badges to job postings, which only *highlighted* a posting
 rather than adding responsibility to it. The current version decorates
 compensation: each decorator contributes to the description, the monthly
@@ -61,7 +58,7 @@ the result** — housing-then-transport gives 75,000 while transport-then-housin
 gives 77,000. This is asserted by the test suite.
 
 **Observer** is hand-written rather than using `java.util.Observer`, both
-because the assignment requires it and because those classes have been
+because the project requires it and because those classes have been
 deprecated since Java 9.
 
 ---
