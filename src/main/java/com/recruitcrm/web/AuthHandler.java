@@ -12,15 +12,7 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Optional;
 
-/**
- * Authentication routes backed by SQLite sessions.
- *
- * Routes:
- *   POST /api/auth/register
- *   POST /api/auth/login
- *   POST /api/auth/logout
- *   GET  /api/auth/me
- */
+
 public class AuthHandler implements HttpHandler {
     private final DataStore store = DataStore.getInstance();
 

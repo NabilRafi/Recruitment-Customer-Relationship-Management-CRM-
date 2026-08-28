@@ -13,17 +13,7 @@ import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 
-/**
- * Serves a candidate's profile — always through the PROXY.
- *
- * Route: GET /api/candidates/{email}
- *
- * Note this handler never reads the Candidate's fields directly. It
- * builds a ProtectedCandidateProfile and asks that. Whether the caller
- * gets the real email or a masked placeholder is decided entirely inside
- * the proxy, so the access rules live in one place rather than being
- * repeated in every handler that touches candidate data.
- */
+
 public class CandidatesHandler implements HttpHandler {
 
     private final DataStore store = DataStore.getInstance();

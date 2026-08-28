@@ -77,27 +77,7 @@ public final class AuthRepository {
 
     public record AccountCredentials(UserAccount account, String passwordHash, String passwordSalt) {}
 
-    /**
-     * Rebuilds a UserAccount from a database row.
-     *
-     * IMPORTANT (viva point): this deliberately goes through the Factory
-     * Method registry rather than a switch/if-else on the role string.
-     * Reading a row back from the database is still *object creation*, so
-     * it has to obey the same rule as registration does — otherwise the
-     * banned "decide the class with a conditional" logic just reappears
-     * here, in the persistence layer, where it is easy to miss.
-     *
-     * The registry maps role -> the one factory that builds that type, so
-     * adding a fourth account type means registering one more factory and
-     * changing nothing in this class.
-     */
-    /**
-     * Updates only the "extra" column for one account.
-     *
-     * Used when a candidate uploads a new resume while applying. A full
-     * account save is deliberately avoided here because it would rewrite
-     * the password columns.
-     */
+    
     public static void updateExtra(String email, String extra) {
         try (Connection conn = Database.getConnection();
              PreparedStatement ps = conn.prepareStatement(

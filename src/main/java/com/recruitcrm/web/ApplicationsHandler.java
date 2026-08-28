@@ -28,20 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Submits and advances Applications through RecruitmentFacade
- * (patterns.facade), which is what actually coordinates the Singleton
- * data store, the chosen Strategy, and the Observer notifications.
- *
- * Which evaluation Strategy runs is picked from STRATEGIES below — a
- * map lookup, not an if-else chain, for the same reason the Factory
- * registry avoids one: consistency, not just where the rule was stated.
- *
- * Routes:
- *   GET  /api/applications                  -> list all applications
- *   POST /api/applications                  -> submit one
- *   POST /api/applications/{id}/status       -> advance status (+ optional strategy)
- */
+
 public class ApplicationsHandler implements HttpHandler {
 
     private final DataStore store = DataStore.getInstance();
@@ -86,17 +73,7 @@ public class ApplicationsHandler implements HttpHandler {
         }
     }
 
-    /**
-     * Lists applications, filtered by who is asking.
-     *
-     *   - Not logged in : 401. Applications are confidential.
-     *   - CANDIDATE     : only their own applications.
-     *   - RECRUITER     : all applications (the hiring pipeline).
-     *
-     * This filtering is done on the SERVER on purpose. Hiding the Pipeline
-     * tab in the browser is only cosmetic - anyone could otherwise open
-     * /api/applications directly and read every candidate's details.
-     */
+    
     private void listApplications(HttpExchange exchange) throws IOException {
         UserAccount user = AuthUtil.requireUser(exchange);
         boolean isRecruiter = user.getRole().equals("RECRUITER");
@@ -205,11 +182,7 @@ public class ApplicationsHandler implements HttpHandler {
         RequestUtil.sendJson(exchange, 200, toJson(application));
     }
 
-    /**
-     * Stage order for the forward-only rule. REJECTED is deliberately
-     * reachable from anywhere - a candidate can be turned down at any
-     * point - but nothing can move backwards.
-     */
+    
     private static final List<ApplicationStatus> ORDER = List.of(
             ApplicationStatus.APPLIED,
             ApplicationStatus.SHORTLISTED,
@@ -232,15 +205,7 @@ public class ApplicationsHandler implements HttpHandler {
         RequestUtil.sendJson(exchange, 200, JsonWriter.array(out));
     }
 
-    /**
-     * Registers a brand new evaluation metric at runtime.
-     *
-     * The recruiter supplies a name, a pass mark, and the document to
-     * request when a candidate falls below it. A CustomEvaluationStrategy
-     * is built and added to the registry - no class is written, nothing
-     * is recompiled, and no existing code changes. This is the Strategy
-     * pattern's extensibility demonstrated live.
-     */
+    
     private void addMetric(HttpExchange exchange) throws IOException {
         AuthUtil.requireRole(exchange, "RECRUITER");
         Map<String, String> form = RequestUtil.parseFormBody(exchange);
@@ -262,13 +227,7 @@ public class ApplicationsHandler implements HttpHandler {
                 .put("key", key).put("name", name).put("passMark", passMark).toString());
     }
 
-    /**
-     * FR8: a candidate withdraws their own application.
-     *
-     * Two guards, both server-side: only the owning candidate may withdraw,
-     * and only while the application is still in the APPLIED stage. Once a
-     * recruiter has begun assessing it, withdrawal is no longer permitted.
-     */
+    
     private void withdrawApplication(HttpExchange exchange, String applicationId) throws IOException {
         UserAccount user = AuthUtil.requireRole(exchange, "CANDIDATE");
 
